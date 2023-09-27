@@ -93,7 +93,6 @@ void myPoint3D::print(char *s)
 double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2)
 {
 	//distance between current point, and the segment defined by p1,p2.
-	/**** TODO ****/
 	myVector3D vect_p1_p2(p2->X - p1->X, p2->Y - p1->Y, p2->Z - p1->Z);
 	myVector3D vect_curr_p1(X - p1->X, Y - p1->Y, Z - p1->Z);
 
