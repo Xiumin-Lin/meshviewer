@@ -50,9 +50,6 @@ bool myMesh::readFile(std::string filename)
 	string s, t, u;
 	//vector<int> faceids;
 	//myHalfedge **hedges;
-	int face_id_cpt = 0;
-	int halfedge_id_cpt = 0;
-	int vertex_id_cpt = 1;
 
 	ifstream fin(filename);
 	if (!fin.is_open()) {
@@ -63,6 +60,10 @@ bool myMesh::readFile(std::string filename)
 
 	map<pair<int, int>, myHalfedge *> twin_map;
 	map<pair<int, int>, myHalfedge *>::iterator it;
+
+	int face_id_cpt = 0;
+	int halfedge_id_cpt = 0;
+	int vertex_id_cpt = 1;
 
 	while (getline(fin, s))
 	{
@@ -98,20 +99,12 @@ bool myMesh::readFile(std::string filename)
 			}
 			cout << endl;
 
+			int listSize = list.size();
 			myFace* face = new myFace();
 			myHalfedge* originHalfedge = new myHalfedge();
-			originHalfedge->index = halfedge_id_cpt++;		// debug with indice
-			face->adjacent_halfedge = originHalfedge;
-			
-			int listSize = list.size();
-			originHalfedge->source = this->vertices.at(list[0]);
-			originHalfedge->source->originof = originHalfedge;
-			originHalfedge->adjacent_face = face;
 
-			halfedges.push_back(originHalfedge);
-
-			myHalfedge* prevHalfedge = originHalfedge;
-			for (size_t i = 1; i < listSize; i++)
+			myHalfedge* prevHalfedge = nullptr;
+			for (size_t i = 0; i < listSize; i++)
 			{
 				myHalfedge* e = new myHalfedge();
 				e->index = halfedge_id_cpt++;	// debug with indice
@@ -120,34 +113,34 @@ bool myMesh::readFile(std::string filename)
 				e->adjacent_face = face;
 				e->prev = prevHalfedge;
 
-				prevHalfedge->next = e;
+				if (i == 0) 
+				{
+					originHalfedge = e;
+					prevHalfedge = e;
+				}
+				else prevHalfedge->next = e;
 
-				it = twin_map.find(make_pair(list[(i + 1) % listSize], list[i]));
+				int vertex_a = list[i];
+				int vertex_b = list[(i + 1) % listSize];
+				it = twin_map.find(make_pair(vertex_b, vertex_a));
 				if (it == twin_map.end()) { 
-					twin_map[make_pair(list[i], list[(i + 1) % listSize])] = e;
+					twin_map[make_pair(vertex_a, vertex_b)] = e;
 				}
 				else { 
 					e->twin = it->second;
 					e->twin->twin = e;
 				}
 
-				prevHalfedge = e;
 				if (i == listSize - 1) {
 					e->next = originHalfedge;
 					originHalfedge->prev = e;
-
-					it = twin_map.find(make_pair(list[1], list[0]));
-					if (it == twin_map.end()) {
-						twin_map[make_pair(list[0], list[1])] = originHalfedge;
-					}
-					else {
-						originHalfedge->twin = it->second;
-						originHalfedge->twin->twin = originHalfedge;
-					}
 				}
 
 				halfedges.push_back(e);
+				prevHalfedge = e;
 			}
+
+			face->adjacent_halfedge = originHalfedge;
 			face->index = face_id_cpt++;
 			faces.push_back(face);
 		}
@@ -166,9 +159,9 @@ void myMesh::computeNormals()
 	/*for (size_t i = 0; i < faces.size(); i++)
 	{
 		faces[i]->computeNormal();
-	}*/
+	}
 
-	/*for (size_t i = 0; i < vertices.size(); i++)
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
 		vertices[i]->computeNormal();
 	}*/
