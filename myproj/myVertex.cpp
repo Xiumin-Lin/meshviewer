@@ -18,7 +18,7 @@ myVertex::~myVertex(void)
 void myVertex::computeNormal()
 {
 	/**** TODO ****/
-	delete normal;
+	/*delete normal;
 	normal = new myVector3D(0.0, 0.0, 0.0);
 	myHalfedge* nextVector = originof;
 	int count = 0;
@@ -28,5 +28,25 @@ void myVertex::computeNormal()
 		count++;
 	} while (nextVector != originof);
 
-	*normal = *normal / count;
+	*normal = *normal / count;*/
+
+	delete normal;
+	normal = new myVector3D(0.0, 0.0, 0.0);
+	myHalfedge* h = originof;
+	myHalfedge* steph = h;
+	int count_outer = 0;
+
+	do {
+		myHalfedge* steph_inner = steph;
+		int count_inner = 0;
+		do {
+			*normal += *(steph_inner->adjacent_face->normal);
+			steph_inner = steph_inner->next;
+			count_inner++;
+		} while (steph_inner != steph);
+
+		steph = steph->twin->next;
+		count_outer++;
+	} while (h != steph);
+	*normal = *normal / count_outer;
 }

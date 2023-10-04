@@ -50,6 +50,8 @@ bool myMesh::readFile(std::string filename)
 	string s, t, u;
 	vector<int> faceids;
 	myHalfedge **hedges;
+	int face_id_cpt = 0;
+	int halfedge_id_cpt = 0;
 
 	ifstream fin(filename);
 	if (!fin.is_open()) {
@@ -91,31 +93,55 @@ bool myMesh::readFile(std::string filename)
 
 			myFace* face = new myFace();
 			myHalfedge* originHalfedge = new myHalfedge();
+			originHalfedge->index = halfedge_id_cpt++;
+			face->adjacent_halfedge = originHalfedge;
 			
 			int size = list.size();
 			originHalfedge->source = this->vertices.at((list[0] - 1) % size);
+			originHalfedge->source->originof = originHalfedge;
 			originHalfedge->adjacent_face = face;
+
+			halfedges.push_back(originHalfedge);
 
 			myHalfedge* prevHalfedge = originHalfedge;
 			for (size_t i = 1; i < size; i++)
 			{
 				myHalfedge* e = new myHalfedge();
+				e->index = halfedge_id_cpt++;
 				e->source = this->vertices.at(list[i] - 1);
+				e->source->originof = e;
 				e->adjacent_face = face;
 				e->prev = prevHalfedge;
 
 				prevHalfedge->next = e;
 
-				e->twin;	// todo
+				it = twin_map.find(make_pair(list[(i + 1) % size], list[i]));
+				if (it == twin_map.end()) { 
+					twin_map[make_pair(list[i], list[(i + 1) % size])] = e;
+				}
+				else { 
+					e->twin = it->second;
+					e->twin->twin = e;
+				}
 
 				prevHalfedge = e;
-
 				if (i == size - 1) {
 					e->next = originHalfedge;
 					originHalfedge->prev = e;
-				}
-			}
 
+					it = twin_map.find(make_pair(list[1], list[0]));
+					if (it == twin_map.end()) {
+						twin_map[make_pair(list[0], list[1])] = originHalfedge;
+					}
+					else {
+						originHalfedge->twin = it->second;
+						originHalfedge->twin->twin = originHalfedge;
+					}
+				}
+
+				halfedges.push_back(e);
+			}
+			face->index = face_id_cpt++;
 			faces.push_back(face);
 		}
 	}
@@ -130,6 +156,23 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
+	cout << "vertices : " << vertices.size() << endl;
+	cout << "faces : " << faces.size() << endl;
+	cout << "half : " << halfedges.size() << endl;
+
+	cout << "normal faces" << endl;
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		cout << i << endl;
+		faces[i]->computeNormal();
+	}
+
+	cout << "normal vertices" << endl;
+	for (size_t i = 0; i < vertices.size(); i++)
+	{
+		cout << i << endl;
+		vertices[i]->computeNormal();
+	}
 }
 
 void myMesh::normalize()
