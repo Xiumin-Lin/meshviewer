@@ -86,11 +86,15 @@ bool myMesh::readFile(std::string filename)
 		else if (t == "f")
 		{
 			vector<int> list;
+			int verticesSize = vertices.size();
+
 			cout << "f"; 
 			while (myline >> u)
 			{
-				cout << " " << atoi((u.substr(0, u.find("/"))).c_str());
-				list.push_back(atoi((u.substr(0, u.find("/"))).c_str()));
+				int vertexIdx = atoi((u.substr(0, u.find("/"))).c_str());
+				cout << " " << vertexIdx;
+				vertexIdx = vertexIdx >= 0 ? vertexIdx - 1 : vertexIdx % verticesSize;
+				list.push_back(vertexIdx);
 			}
 			cout << endl;
 
@@ -99,28 +103,28 @@ bool myMesh::readFile(std::string filename)
 			originHalfedge->index = halfedge_id_cpt++;		// debug with indice
 			face->adjacent_halfedge = originHalfedge;
 			
-			int size = list.size();
-			originHalfedge->source = this->vertices.at(list[0] - 1);
+			int listSize = list.size();
+			originHalfedge->source = this->vertices.at(list[0]);
 			originHalfedge->source->originof = originHalfedge;
 			originHalfedge->adjacent_face = face;
 
 			halfedges.push_back(originHalfedge);
 
 			myHalfedge* prevHalfedge = originHalfedge;
-			for (size_t i = 1; i < size; i++)
+			for (size_t i = 1; i < listSize; i++)
 			{
 				myHalfedge* e = new myHalfedge();
 				e->index = halfedge_id_cpt++;	// debug with indice
-				e->source = this->vertices.at(list[i] - 1);
+				e->source = this->vertices.at(list[i]);
 				e->source->originof = e;
 				e->adjacent_face = face;
 				e->prev = prevHalfedge;
 
 				prevHalfedge->next = e;
 
-				it = twin_map.find(make_pair(list[(i + 1) % size], list[i]));
+				it = twin_map.find(make_pair(list[(i + 1) % listSize], list[i]));
 				if (it == twin_map.end()) { 
-					twin_map[make_pair(list[i], list[(i + 1) % size])] = e;
+					twin_map[make_pair(list[i], list[(i + 1) % listSize])] = e;
 				}
 				else { 
 					e->twin = it->second;
@@ -128,7 +132,7 @@ bool myMesh::readFile(std::string filename)
 				}
 
 				prevHalfedge = e;
-				if (i == size - 1) {
+				if (i == listSize - 1) {
 					e->next = originHalfedge;
 					originHalfedge->prev = e;
 
@@ -159,10 +163,10 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	for (size_t i = 0; i < faces.size(); i++)
+	/*for (size_t i = 0; i < faces.size(); i++)
 	{
 		faces[i]->computeNormal();
-	}
+	}*/
 
 	/*for (size_t i = 0; i < vertices.size(); i++)
 	{
