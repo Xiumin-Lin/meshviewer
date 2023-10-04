@@ -71,14 +71,52 @@ bool myMesh::readFile(std::string filename)
 			float x, y, z;
 			myline >> x >> y >> z;
 			cout << "v " << x << " " << y << " " << z << endl;
+			myVertex* vertex = new myVertex();
+			vertex->point = new myPoint3D(x, y, z);
+			vertices.push_back(vertex);
 		}
 		else if (t == "mtllib") {}
 		else if (t == "usemtl") {}
 		else if (t == "s") {}
 		else if (t == "f")
 		{
+			vector<int> list;
 			cout << "f"; 
-			while (myline >> u) cout << " " << atoi((u.substr(0, u.find("/"))).c_str());
+			while (myline >> u)
+			{
+				cout << " " << atoi((u.substr(0, u.find("/"))).c_str());
+				list.push_back(atoi((u.substr(0, u.find("/"))).c_str()));
+			}
+
+			myFace* face = new myFace();
+			
+			myHalfedge* originHalfedge = new myHalfedge();
+			
+			int size = list.size();
+			originHalfedge->source = this->vertices.at(list[0] % size);
+			originHalfedge->adjacent_face = face;
+
+			myHalfedge* prevHalfedge = originHalfedge;
+			for (size_t i = 1; i < size; i++)
+			{
+				myHalfedge* e = new myHalfedge();
+				e->source = this->vertices.at(list[i]);
+				e->adjacent_face = face;
+				e->prev = prevHalfedge;
+
+				prevHalfedge->next = e;
+
+				e->twin;	// todo
+
+				prevHalfedge = e;
+
+				if (i == size - 1) {
+					e->next = originHalfedge;
+					originHalfedge->prev = e;
+				}
+			}
+
+			faces.push_back(face);
 			cout << endl;
 		}
 	}
