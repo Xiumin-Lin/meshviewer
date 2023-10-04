@@ -48,10 +48,11 @@ void myMesh::checkMesh()
 bool myMesh::readFile(std::string filename)
 {
 	string s, t, u;
-	vector<int> faceids;
-	myHalfedge **hedges;
+	//vector<int> faceids;
+	//myHalfedge **hedges;
 	int face_id_cpt = 0;
 	int halfedge_id_cpt = 0;
+	int vertex_id_cpt = 1;
 
 	ifstream fin(filename);
 	if (!fin.is_open()) {
@@ -73,7 +74,9 @@ bool myMesh::readFile(std::string filename)
 			float x, y, z;
 			myline >> x >> y >> z;
 			cout << "v " << x << " " << y << " " << z << endl;
+
 			myVertex* vertex = new myVertex();
+			vertex->index = vertex_id_cpt++;	// debug with indice start at 1
 			vertex->point = new myPoint3D(x, y, z);
 			vertices.push_back(vertex);
 		}
@@ -93,11 +96,11 @@ bool myMesh::readFile(std::string filename)
 
 			myFace* face = new myFace();
 			myHalfedge* originHalfedge = new myHalfedge();
-			originHalfedge->index = halfedge_id_cpt++;
+			originHalfedge->index = halfedge_id_cpt++;		// debug with indice
 			face->adjacent_halfedge = originHalfedge;
 			
 			int size = list.size();
-			originHalfedge->source = this->vertices.at((list[0] - 1) % size);
+			originHalfedge->source = this->vertices.at(list[0] - 1);
 			originHalfedge->source->originof = originHalfedge;
 			originHalfedge->adjacent_face = face;
 
@@ -107,7 +110,7 @@ bool myMesh::readFile(std::string filename)
 			for (size_t i = 1; i < size; i++)
 			{
 				myHalfedge* e = new myHalfedge();
-				e->index = halfedge_id_cpt++;
+				e->index = halfedge_id_cpt++;	// debug with indice
 				e->source = this->vertices.at(list[i] - 1);
 				e->source->originof = e;
 				e->adjacent_face = face;
@@ -156,23 +159,15 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	cout << "vertices : " << vertices.size() << endl;
-	cout << "faces : " << faces.size() << endl;
-	cout << "half : " << halfedges.size() << endl;
-
-	cout << "normal faces" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
-		cout << i << endl;
 		faces[i]->computeNormal();
 	}
 
-	cout << "normal vertices" << endl;
-	for (size_t i = 0; i < vertices.size(); i++)
+	/*for (size_t i = 0; i < vertices.size(); i++)
 	{
-		cout << i << endl;
 		vertices[i]->computeNormal();
-	}
+	}*/
 }
 
 void myMesh::normalize()

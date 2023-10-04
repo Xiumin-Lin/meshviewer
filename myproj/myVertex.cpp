@@ -2,6 +2,8 @@
 #include "myvector3d.h"
 #include "myHalfedge.h"
 #include "myFace.h"
+#include <iostream>
+using namespace std;
 
 myVertex::myVertex(void)
 {
@@ -17,6 +19,7 @@ myVertex::~myVertex(void)
 
 void myVertex::computeNormal()
 {
+	//cout << index << " : originof = " << endl;
 	/**** TODO ****/
 	/*delete normal;
 	normal = new myVector3D(0.0, 0.0, 0.0);
@@ -37,16 +40,17 @@ void myVertex::computeNormal()
 	int count_outer = 0;
 
 	do {
+		*normal += *(steph->adjacent_face->normal);
 		myHalfedge* steph_inner = steph;
-		int count_inner = 0;
+
 		do {
-			*normal += *(steph_inner->adjacent_face->normal);
 			steph_inner = steph_inner->next;
-			count_inner++;
 		} while (steph_inner != steph);
 
 		steph = steph->twin->next;
 		count_outer++;
 	} while (h != steph);
+	//cout << index << " : originof = " << originof->index << " - normal = " << normal->dX << ", " << normal->dY << ", " << normal->dZ;
 	*normal = *normal / count_outer;
+	//cout << " / " << count_outer << " = " << normal->dX << ", " << normal->dY << ", " << normal->dZ << endl;
 }
