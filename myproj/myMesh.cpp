@@ -87,20 +87,20 @@ bool myMesh::readFile(std::string filename)
 				cout << " " << atoi((u.substr(0, u.find("/"))).c_str());
 				list.push_back(atoi((u.substr(0, u.find("/"))).c_str()));
 			}
+			cout << endl;
 
 			myFace* face = new myFace();
-			
 			myHalfedge* originHalfedge = new myHalfedge();
 			
 			int size = list.size();
-			originHalfedge->source = this->vertices.at(list[0] % size);
+			originHalfedge->source = this->vertices.at((list[0] - 1) % size);
 			originHalfedge->adjacent_face = face;
 
 			myHalfedge* prevHalfedge = originHalfedge;
 			for (size_t i = 1; i < size; i++)
 			{
 				myHalfedge* e = new myHalfedge();
-				e->source = this->vertices.at(list[i]);
+				e->source = this->vertices.at(list[i] - 1);
 				e->adjacent_face = face;
 				e->prev = prevHalfedge;
 
@@ -117,7 +117,6 @@ bool myMesh::readFile(std::string filename)
 			}
 
 			faces.push_back(face);
-			cout << endl;
 		}
 	}
 
