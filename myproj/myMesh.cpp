@@ -74,7 +74,7 @@ bool myMesh::readFile(std::string filename)
 		{
 			float x, y, z;
 			myline >> x >> y >> z;
-			cout << "v " << x << " " << y << " " << z << endl;
+			//cout << "v " << x << " " << y << " " << z << endl;
 
 			myVertex* vertex = new myVertex();
 			vertex->index = vertex_id_cpt++;	// debug with indice start at 1
@@ -89,15 +89,15 @@ bool myMesh::readFile(std::string filename)
 			vector<int> list;
 			int verticesSize = vertices.size();
 
-			cout << "f"; 
+			//cout << "f"; 
 			while (myline >> u)
 			{
 				int vertexIdx = atoi((u.substr(0, u.find("/"))).c_str());
-				cout << " " << vertexIdx;
+				//cout << " " << vertexIdx;
 				vertexIdx = vertexIdx >= 0 ? vertexIdx - 1 : vertexIdx % verticesSize;
 				list.push_back(vertexIdx);
 			}
-			cout << endl;
+			//cout << endl;
 
 			int listSize = list.size();
 			myFace* face = new myFace();
@@ -156,15 +156,16 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	/*for (size_t i = 0; i < faces.size(); i++)
+	for (size_t i = 0; i < faces.size(); i++)
 	{
 		faces[i]->computeNormal();
+		faces[i]->normal->print("");
 	}
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
 		vertices[i]->computeNormal();
-	}*/
+	}
 }
 
 void myMesh::normalize()
