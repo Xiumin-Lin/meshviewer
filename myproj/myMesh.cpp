@@ -159,7 +159,6 @@ void myMesh::computeNormals()
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		faces[i]->computeNormal();
-		faces[i]->normal->print("");
 	}
 
 	for (size_t i = 0; i < vertices.size(); i++)
@@ -230,12 +229,39 @@ void myMesh::subdivisionCatmullClark()
 void myMesh::triangulate()
 {
 	/**** TODO ****/
+	for each (myFace* face in this->faces)
+	{
+		if (triangulate(face)) continue;
+		myPoint3D* center_p = new myPoint3D();
+		
+		double vertex_cpt = 0;
+		myHalfedge* step_halfedge = face->adjacent_halfedge;
+		do
+		{
+			*center_p += *(step_halfedge->source->point);
+			vertex_cpt++;
+		} while (face->adjacent_halfedge != step_halfedge);
+
+		if (vertex_cpt == 4) {
+			// todo
+			myPoint3D* p1 = face->adjacent_halfedge->source->point;
+			myPoint3D* p2 = face->adjacent_halfedge->next->next->source->point;
+		}
+		else if (vertex_cpt > 4) {
+			// todo
+			*center_p /= vertex_cpt;
+		}
+		else
+		{
+			cout << "Error when tryng triangulate face id " << face->index << " : have only " << vertex_cpt << " halfedges !" << endl;
+		}
+	}
 }
 
 //return false if already triangle, true othewise.
 bool myMesh::triangulate(myFace *f)
 {
 	/**** TODO ****/
-	return false;
+	return f->adjacent_halfedge->next->next->next == f->adjacent_halfedge ? true : false;
 }
 
