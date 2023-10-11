@@ -63,7 +63,6 @@ bool myMesh::readFile(std::string filename)
 
 	int face_id_cpt = 0;
 	int halfedge_id_cpt = 0;
-	int vertex_id_cpt = 1;
 
 	while (getline(fin, s))
 	{
@@ -77,7 +76,6 @@ bool myMesh::readFile(std::string filename)
 			//cout << "v " << x << " " << y << " " << z << endl;
 
 			myVertex* vertex = new myVertex();
-			vertex->index = vertex_id_cpt++;	// debug with indice start at 1
 			vertex->point = new myPoint3D(x, y, z);
 			vertices.push_back(vertex);
 		}
@@ -225,6 +223,17 @@ void myMesh::subdivisionCatmullClark()
 	/**** TODO ****/
 }
 
+void associateTwin(map<pair<int, int>, myHalfedge*>& twin_map, int idx_vertex_a, int idx_vertex_b, myHalfedge* e)
+{
+	map<pair<int, int>, myHalfedge*>::iterator it = twin_map.find(make_pair(idx_vertex_b, idx_vertex_a));
+	if (it == twin_map.end()) {
+		twin_map[make_pair(idx_vertex_a, idx_vertex_b)] = e;
+	}
+	else {
+		e->twin = it->second;
+		e->twin->twin = e;
+	}
+}
 
 void myMesh::triangulate()
 {
@@ -240,16 +249,65 @@ void myMesh::triangulate()
 		{
 			*center_p += *(step_halfedge->source->point);
 			vertex_cpt++;
+			step_halfedge = step_halfedge->next;
 		} while (face->adjacent_halfedge != step_halfedge);
 
-		if (vertex_cpt == 4) {
-			// todo
-			myPoint3D* p1 = face->adjacent_halfedge->source->point;
-			myPoint3D* p2 = face->adjacent_halfedge->next->next->source->point;
-		}
-		else if (vertex_cpt > 4) {
-			// todo
+		if (vertex_cpt >= 4) {
+			map<pair<int, int>, myHalfedge*> twin_map;
+
+			// create center vertex
 			*center_p /= vertex_cpt;
+			myVertex* center_vertex = new myVertex();
+			center_vertex->point = center_p;
+			vertices.push_back(center_vertex);
+
+			myHalfedge* originHalfedge = face->adjacent_halfedge;
+
+			do
+			{
+				// create face
+				myFace* new_face = new myFace();
+				new_face->adjacent_halfedge = originHalfedge;
+				originHalfedge->adjacent_face = new_face;
+
+				// create halfedge
+				myHalfedge* originHalfedgeNext = originHalfedge->next;
+
+				myHalfedge* nextHalf = new myHalfedge();
+				nextHalf->source = originHalfedgeNext->source;
+				nextHalf->source->originof = nextHalf;
+				nextHalf->adjacent_face = new_face;
+
+				myHalfedge* prevHalf = new myHalfedge();
+				prevHalf->source = center_vertex;
+				prevHalf->source->originof = prevHalf;
+				prevHalf->adjacent_face = new_face;
+
+				// associate halfedge
+				nextHalf->prev = originHalfedge;
+				nextHalf->next = prevHalf;
+
+				prevHalf->prev = nextHalf;
+				prevHalf->next = originHalfedge;
+
+				originHalfedge->prev = prevHalf;
+				originHalfedge->next = nextHalf;
+
+				// create twin
+				associateTwin(twin_map, nextHalf->source->index, prevHalf->source->index, nextHalf);
+				associateTwin(twin_map, prevHalf->source->index, originHalfedge->source->index, prevHalf);
+
+				// save created face and halfedge
+				faces.push_back(new_face);
+
+				halfedges.push_back(nextHalf);
+				halfedges.push_back(prevHalf);
+
+				// delete old face TODO
+
+				// pass to next globale halfedge
+				originHalfedge = originHalfedgeNext;
+			} while (face->adjacent_halfedge != originHalfedge);
 		}
 		else
 		{
@@ -264,4 +322,3 @@ bool myMesh::triangulate(myFace *f)
 	/**** TODO ****/
 	return f->adjacent_halfedge->next->next->next == f->adjacent_halfedge ? true : false;
 }
-

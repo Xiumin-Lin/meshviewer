@@ -5,8 +5,11 @@
 #include <iostream>
 using namespace std;
 
+static int vertex_id_cpt = 1;
+
 myVertex::myVertex(void)
 {
+	index = vertex_id_cpt++;
 	point = NULL;
 	originof = NULL;
 	normal = new myVector3D(1.0,1.0,1.0);
