@@ -237,9 +237,12 @@ void associateTwin(map<pair<int, int>, myHalfedge*>& twin_map, int idx_vertex_a,
 
 void myMesh::triangulate()
 {
+	int cpt = 0;
+	int delete_cpt = 0;
 	/**** TODO ****/
-	for each (myFace* face in this->faces)
+	for (size_t idx = 0; idx < faces.size(); idx++)
 	{
+		myFace* face = faces[idx];
 		if (triangulate(face)) continue;
 		myPoint3D* center_p = new myPoint3D();
 		
@@ -303,15 +306,26 @@ void myMesh::triangulate()
 				halfedges.push_back(nextHalf);
 				halfedges.push_back(prevHalf);
 
-				// delete old face TODO
-
 				// pass to next globale halfedge
 				originHalfedge = originHalfedgeNext;
 			} while (face->adjacent_halfedge != originHalfedge);
+
+			// delete old face
+			delete this->faces[idx];
+			this->faces[idx] = nullptr;
 		}
 		else
 		{
 			cout << "Error when tryng triangulate face id " << face->index << " : have only " << vertex_cpt << " halfedges !" << endl;
+		}
+	}
+
+	for (vector<myFace*>::iterator it = faces.begin(); it != faces.end(); ) {
+		if (*it == nullptr) {
+			faces.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 }
