@@ -165,6 +165,19 @@ void menu(int item)
 			exit(0);
 			break;
 		}
+	case MENU_CONTRACTEDGE:
+		{
+			m->triangulate();
+			cout << "triangulate" << endl;
+			m->computeNormals();
+			cout << "computeNormals" << endl;
+			m->collapse(m->halfedges[0]);
+			cout << "collapse" << endl;
+			m->computeNormals();
+			cout << "computeNormals" << endl;
+			makeBuffers(m);
+			break;
+		}
 	}
 	glutPostRedisplay();
 }
