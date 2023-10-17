@@ -4,13 +4,13 @@
 #include "myVertex.h"
 #include <GL/glew.h>
 
-static int id_cpt = 0;
+static int face_id_cpt = 0;
 
 myFace::myFace(void)
 {
 	adjacent_halfedge = NULL;
 	normal = new myVector3D(1.0, 1.0, 1.0);
-	id_cpt++;
+	index = face_id_cpt++;
 }
 
 myFace::~myFace(void)

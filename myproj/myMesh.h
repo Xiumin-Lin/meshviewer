@@ -29,7 +29,7 @@ public:
 	bool triangulate(myFace *);
 
 	void myMesh::collapse(myHalfedge *);
-	myHalfedge* myMesh::collapseFace(myHalfedge *, myVertex *);
+	myHalfedge* myMesh::collapseFace(myHalfedge *);
 
 	void clear();
 

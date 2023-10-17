@@ -167,10 +167,7 @@ void menu(int item)
 		}
 	case MENU_CONTRACTEDGE:
 		{
-			m->triangulate();
-			cout << "triangulate" << endl;
-			m->computeNormals();
-			cout << "computeNormals" << endl;
+			clear();
 			m->collapse(m->halfedges[0]);
 			cout << "collapse" << endl;
 			m->computeNormals();
@@ -384,7 +381,7 @@ void initMesh()
 	closest_face = NULL;
 
 	m = new myMesh();
-	if (m->readFile("dolphin.obj")) {
+	if (m->readFile("cube.obj")) {
 		m->computeNormals();
 		makeBuffers(m);
 	}

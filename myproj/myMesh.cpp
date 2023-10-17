@@ -336,44 +336,66 @@ void myMesh::collapse(myHalfedge* e) {
 	// calculate the center point
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->next->source;
-	myPoint3D center_p = *v1->point + *v2->point;
-	center_p /= 2;
+	*v1->point += *v2->point;
+	*v1->point /= 2;
 
-	v1->point = &center_p;	 // DO NOT DELETE V1 BUT DELETE V2
 	myVertex* new_center_vertex = v1;
+	//cout << "new center :" << new_center_vertex->point->X << ", " << new_center_vertex->point->Y << ", " << new_center_vertex->point->Z << endl;
 
 	// collapse face
 	myFace* toDelete_f1 = e->adjacent_face;
-	myHalfedge* toDelete_half_1 = collapseFace(e, new_center_vertex);
+	myHalfedge* toDelete_half_1 = collapseFace(e);
+	//cout << "to delete half e1 :" << ((toDelete_half_1 == nullptr) ? -1 : toDelete_half_1->index) << endl;
 
 	// collapse twin face
 	myFace* toDelete_f2 = e->twin->adjacent_face;
-	myHalfedge* toDelete_half_2 = collapseFace(e->twin, new_center_vertex);
+	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
+	//cout << "to delete half e2 :" << ((toDelete_half_2 == nullptr) ? -1 : toDelete_half_2->index) << endl;
+
+	myHalfedge* step = e->next;
+	new_center_vertex->originof = e->next;
+	do
+	{
+		step->source = new_center_vertex;
+		step = step->twin->next;
+	} while (step != e->next);
 
 	// delete vertice v2
-	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end(); it++) {
+	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end();) {
 		if (*it == v2) {
+			//cout << "delete v2 : " << (*it)->index << '(' << *it << ')' << endl;
 			vertices.erase(it);
 			break;
+		} else {
+			it++;
 		}
 	}
 
 	// delete faces
-	for (vector<myFace *>::iterator it = faces.begin(); it != faces.end(); it++) {
+	for (vector<myFace *>::iterator it = faces.begin(); it != faces.end();) {
 		if ((*it == toDelete_f1 && toDelete_half_1 != nullptr) || (*it == toDelete_f2 && toDelete_half_2 != nullptr)) {
+			//cout << "delete face : " << (*it)->index << '(' << *it << ')' << endl;
 			faces.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 	
 	// delete halfedge
-	for (vector<myHalfedge *>::iterator it = halfedges.begin(); it != halfedges.end(); it++) {
-		if (*it == toDelete_half_1 || *it == toDelete_half_2) {
+	for (vector<myHalfedge *>::iterator it = halfedges.begin(); it != halfedges.end();) {
+		if (*it == toDelete_half_1 || *it == toDelete_half_2 || *it == e) {
+			//cout << "delete halfedge : " << (*it)->index << '(' << *it << ')' << endl;
 			halfedges.erase(it);
 		}
+		else {
+			it++;
+		}
 	}
+	checkMesh();
 }
 
-myHalfedge* myMesh::collapseFace(myHalfedge* e, myVertex* center_p) {
+myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 	myHalfedge* step = e;
 	int cpt = 0;
 	do
@@ -382,6 +404,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e, myVertex* center_p) {
 		cpt++;
 	} while (step != e);
 
+	//cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->index << endl;
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
 		myHalfedge* halfedge_b = e->next->twin;
@@ -394,16 +417,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e, myVertex* center_p) {
 		halfedge_a->next->prev = halfedge_a;
 		halfedge_a->prev->next = halfedge_a;
 
-		// set to center point
-		center_p->originof = e->next;
-		do
-		{
-			step->next->source = center_p;
-			step = step->next->twin;
-		} while (step != e);
-
-		// return halfedge to delete
-		return halfedge_b;
+		return halfedge_b; // return halfedge to delete
 	}
 	else if (cpt > 3) {
 		myHalfedge* next = e->next;
@@ -411,17 +425,8 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e, myVertex* center_p) {
 
 		next->prev = prev;
 		prev->next = next;
-		next->twin->next = prev->twin;
-		prev->twin->prev = next->twin;
 
-		// set to center point
-		center_p->originof = next;
-		step = next;
-		do
-		{
-			step->source = center_p;
-			step = step->twin->next;
-		} while (step != e);
+		e->adjacent_face->adjacent_halfedge = next;
 
 		return nullptr;
 	}
