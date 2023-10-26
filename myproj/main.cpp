@@ -168,10 +168,13 @@ void menu(int item)
 	case MENU_CONTRACTEDGE:
 		{
 			clear();
+			cout << "start collapse" << endl;
 			m->collapse(m->halfedges[0]);
-			cout << "collapse" << endl;
-			m->computeNormals();
+
 			cout << "computeNormals" << endl;
+			m->computeNormals();
+
+			cout << "makeBuffers" << endl;
 			makeBuffers(m);
 			break;
 		}

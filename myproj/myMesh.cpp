@@ -149,15 +149,17 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
+	cout << "start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		faces[i]->computeNormal();
 	}
-
+	cout << "start vertices computeNormals" << endl;
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
 		vertices[i]->computeNormal();
 	}
+	cout << "end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -335,35 +337,32 @@ bool myMesh::triangulate(myFace *f)
 void myMesh::collapse(myHalfedge* e) {
 	// calculate the center point
 	myVertex* v1 = e->source;
-	myVertex* v2 = e->next->source;
+	myVertex* v2 = e->twin->source;
 	*v1->point += *v2->point;
-	*v1->point /= 2;
+	*v1->point /= 2; // v1 is the new_center_vertex
 
-	myVertex* new_center_vertex = v1;
-	//cout << "new center :" << new_center_vertex->point->X << ", " << new_center_vertex->point->Y << ", " << new_center_vertex->point->Z << endl;
-
+	// change all halfedge of v2 to v1
+	myHalfedge* step = v2->originof;
+	do {
+		step = step->twin->next;
+		step->source = v1;
+	} while (step != v2->originof);
+	v1->originof = e->prev->twin;
+	
 	// collapse face
 	myFace* toDelete_f1 = e->adjacent_face;
 	myHalfedge* toDelete_half_1 = collapseFace(e);
-	//cout << "to delete half e1 :" << ((toDelete_half_1 == nullptr) ? -1 : toDelete_half_1->index) << endl;
+	myHalfedge* toDelete_half_1_twin = (toDelete_half_1 != nullptr) ? toDelete_half_1->twin : nullptr;
 
 	// collapse twin face
 	myFace* toDelete_f2 = e->twin->adjacent_face;
 	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
-	//cout << "to delete half e2 :" << ((toDelete_half_2 == nullptr) ? -1 : toDelete_half_2->index) << endl;
+	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
-	myHalfedge* step = e->next;
-	new_center_vertex->originof = e->next;
-	do
-	{
-		step->source = new_center_vertex;
-		step = step->twin->next;
-	} while (step != e->next);
 
 	// delete vertice v2
 	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end();) {
 		if (*it == v2) {
-			//cout << "delete v2 : " << (*it)->index << '(' << *it << ')' << endl;
 			vertices.erase(it);
 			break;
 		} else {
@@ -374,7 +373,6 @@ void myMesh::collapse(myHalfedge* e) {
 	// delete faces
 	for (vector<myFace *>::iterator it = faces.begin(); it != faces.end();) {
 		if ((*it == toDelete_f1 && toDelete_half_1 != nullptr) || (*it == toDelete_f2 && toDelete_half_2 != nullptr)) {
-			//cout << "delete face : " << (*it)->index << '(' << *it << ')' << endl;
 			faces.erase(it);
 		}
 		else {
@@ -383,9 +381,10 @@ void myMesh::collapse(myHalfedge* e) {
 	}
 	
 	// delete halfedge
+	myHalfedge* e_twin = e->twin;
 	for (vector<myHalfedge *>::iterator it = halfedges.begin(); it != halfedges.end();) {
-		if (*it == toDelete_half_1 || *it == toDelete_half_2 || *it == e) {
-			//cout << "delete halfedge : " << (*it)->index << '(' << *it << ')' << endl;
+		if (*it == toDelete_half_1 || *it == toDelete_half_1_twin || *it == toDelete_half_2 || *it == toDelete_half_2_twin || *it == e || *it == e_twin) {
+			cout << "Delete halfedge num " << (*it)->index << endl;
 			halfedges.erase(it);
 		}
 		else {
@@ -403,8 +402,8 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
+	cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->index << endl;
 
-	//cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->index << endl;
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
 		myHalfedge* halfedge_b = e->next->twin;
@@ -413,6 +412,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		halfedge_a->next = halfedge_b->next;
 		halfedge_a->prev = halfedge_b->prev;
 		halfedge_a->adjacent_face = halfedge_b->adjacent_face;
+		halfedge_a->adjacent_face->adjacent_halfedge = halfedge_a;
 
 		halfedge_a->next->prev = halfedge_a;
 		halfedge_a->prev->next = halfedge_a;
