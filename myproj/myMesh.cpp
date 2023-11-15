@@ -152,11 +152,13 @@ void myMesh::computeNormals()
 	cout << "start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
+		cout << faces[i]->index << endl;
 		faces[i]->computeNormal();
 	}
 	cout << "start vertices computeNormals" << endl;
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
+		cout << vertices[i]->index << endl;
 		vertices[i]->computeNormal();
 	}
 	cout << "end vertices computeNormals" << endl;
@@ -317,12 +319,10 @@ void myMesh::triangulate()
 		}
 	}
 
-	for (vector<myFace*>::iterator it = faces.begin(); it != faces.end(); ) {
-		if (*it == nullptr) {
-			faces.erase(it);
-		}
-		else {
-			it++;
+	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
+	{
+		if (faces[i] == nullptr) {
+			faces.erase(faces.begin() + i);
 		}
 	}
 }
@@ -361,34 +361,29 @@ void myMesh::collapse(myHalfedge* e) {
 
 
 	// delete vertice v2
-	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end();) {
+	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end(); it++) {
 		if (*it == v2) {
 			vertices.erase(it);
 			break;
-		} else {
-			it++;
 		}
 	}
 
 	// delete faces
-	for (vector<myFace *>::iterator it = faces.begin(); it != faces.end();) {
-		if ((*it == toDelete_f1 && toDelete_half_1 != nullptr) || (*it == toDelete_f2 && toDelete_half_2 != nullptr)) {
-			faces.erase(it);
-		}
-		else {
-			it++;
+	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
+	{
+		if ((faces[i] == toDelete_f1 && toDelete_half_1 != nullptr) || (faces[i] == toDelete_f2 && toDelete_half_2 != nullptr)) {
+			cout << "Delete face num " << faces[i]->index << endl;
+			faces.erase(faces.begin() + i);
 		}
 	}
 	
 	// delete halfedge
 	myHalfedge* e_twin = e->twin;
-	for (vector<myHalfedge *>::iterator it = halfedges.begin(); it != halfedges.end();) {
-		if (*it == toDelete_half_1 || *it == toDelete_half_1_twin || *it == toDelete_half_2 || *it == toDelete_half_2_twin || *it == e || *it == e_twin) {
-			cout << "Delete halfedge num " << (*it)->index << endl;
-			halfedges.erase(it);
-		}
-		else {
-			it++;
+	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
+	{
+		if (halfedges[i] == toDelete_half_1 || halfedges[i] == toDelete_half_1_twin || halfedges[i] == toDelete_half_2 || halfedges[i] == toDelete_half_2_twin || halfedges[i] == e || halfedges[i] == e_twin) {
+			cout << "Delete halfedge num " << halfedges[i]->index << endl;
+			halfedges.erase(halfedges.begin() + i);
 		}
 	}
 	checkMesh();
