@@ -39,15 +39,13 @@ void myMesh::checkMesh()
 		if ((*it)->twin == NULL)
 			break;
 	}
-	if (it != halfedges.end())
-		cout << "Error! Not all edges have their twins!\n";
+	if (it != halfedges.end()) cout << "Error! Not all edges have their twins!\n";
 	else cout << "Each edge has a twin!\n";
 }
 
 
 bool myMesh::readFile(std::string filename)
 {
-	cout << "-----------------start read file----------------" << endl;
 	string s, t, u;
 	//vector<int> faceids;
 	//myHalfedge **hedges;
@@ -142,7 +140,6 @@ bool myMesh::readFile(std::string filename)
 
 	checkMesh();
 	normalize();
-	cout << "-----------------end read file-----------------" << endl;
 	return true;
 }
 

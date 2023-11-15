@@ -24,7 +24,6 @@ myVertex::~myVertex(void)
 
 void myVertex::computeNormal()
 {
-	cout << "-----------------start computeNormal for vertex : " << id << endl;
 	delete normal;
 	normal = new myVector3D(0.0, 0.0, 0.0);
 	myHalfedge* steph = originof;
@@ -35,5 +34,4 @@ void myVertex::computeNormal()
 		steph = steph->twin->next;
 	} while (originof != steph);
 	normal->normalize();
-	cout << "-----------------end computeNormal for vertex : " << id << endl;
 }
