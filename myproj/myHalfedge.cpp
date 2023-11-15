@@ -10,8 +10,8 @@ myHalfedge::myHalfedge(void)
 	next = NULL;  
 	prev = NULL;  
 	twin = NULL;  
-	
-	index = halfede_id_cpt++;
+	id = halfede_id_cpt++;
+	//std::cout << "create halfedge : " << id << std::endl;
 }
 
 void myHalfedge::copy(myHalfedge *ie)

@@ -16,6 +16,7 @@ public:
 	myHalfedge *prev;  
 	myHalfedge *twin;  
 
+	int id;
 	int index; //use as you wish.
 
 	myHalfedge(void);

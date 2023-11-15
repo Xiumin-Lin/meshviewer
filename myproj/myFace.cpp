@@ -3,6 +3,8 @@
 #include "myHalfedge.h"
 #include "myVertex.h"
 #include <GL/glew.h>
+#include <iostream>
+using namespace std;
 
 static int face_id_cpt = 0;
 
@@ -10,11 +12,13 @@ myFace::myFace(void)
 {
 	adjacent_halfedge = NULL;
 	normal = new myVector3D(1.0, 1.0, 1.0);
-	index = face_id_cpt++;
+	id = face_id_cpt++;
+	cout << "create face : " << id << endl;
 }
 
 myFace::~myFace(void)
 {
+	cout << "delete face : " << index << endl;
 	if (normal) delete normal;
 }
 

@@ -47,6 +47,7 @@ void myMesh::checkMesh()
 
 bool myMesh::readFile(std::string filename)
 {
+	cout << "-----------------start read file----------------" << endl;
 	string s, t, u;
 	//vector<int> faceids;
 	//myHalfedge **hedges;
@@ -96,7 +97,7 @@ bool myMesh::readFile(std::string filename)
 
 			int listSize = list.size();
 			myFace* face = new myFace();
-			myHalfedge* originHalfedge = new myHalfedge();
+			myHalfedge* originHalfedge;
 
 			myHalfedge* prevHalfedge = nullptr;
 			for (size_t i = 0; i < listSize; i++)
@@ -141,7 +142,7 @@ bool myMesh::readFile(std::string filename)
 
 	checkMesh();
 	normalize();
-
+	cout << "-----------------end read file-----------------" << endl;
 	return true;
 }
 
@@ -149,19 +150,19 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	cout << "start faces computeNormals" << endl;
+	cout << "-----------------start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
-		cout << faces[i]->index << endl;
+		cout << i << " : " << faces[i]->id << endl;
 		faces[i]->computeNormal();
 	}
-	cout << "start vertices computeNormals" << endl;
+	cout << "-----------------start vertices computeNormals" << endl;
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		cout << vertices[i]->index << endl;
+		cout << i << " : " << vertices[i]->id << endl;
 		vertices[i]->computeNormal();
 	}
-	cout << "end vertices computeNormals" << endl;
+	cout << "-----------------end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -296,8 +297,8 @@ void myMesh::triangulate()
 				originHalfedge->next = nextHalf;
 
 				// create twin
-				associateTwin(twin_map, nextHalf->source->index, prevHalf->source->index, nextHalf);
-				associateTwin(twin_map, prevHalf->source->index, originHalfedge->source->index, prevHalf);
+				associateTwin(twin_map, nextHalf->source->id, prevHalf->source->id, nextHalf);
+				associateTwin(twin_map, prevHalf->source->id, originHalfedge->source->id, prevHalf);
 
 				// save created face and halfedge
 				faces.push_back(new_face);
@@ -315,7 +316,7 @@ void myMesh::triangulate()
 		}
 		else
 		{
-			cout << "Error when tryng triangulate face id " << face->index << " : have only " << vertex_cpt << " halfedges !" << endl;
+			cout << "Error when tryng triangulate face id " << face->id << " : have only " << vertex_cpt << " halfedges !" << endl;
 		}
 	}
 
@@ -338,6 +339,7 @@ void myMesh::collapse(myHalfedge* e) {
 	// calculate the center point
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
+	cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
 	*v1->point /= 2; // v1 is the new_center_vertex
 
@@ -359,12 +361,12 @@ void myMesh::collapse(myHalfedge* e) {
 	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
 	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
-
 	// delete vertice v2
-	for (vector<myVertex *>::iterator it = vertices.begin(); it != vertices.end(); it++) {
-		if (*it == v2) {
-			vertices.erase(it);
-			break;
+	for (int i = static_cast<int>(vertices.size()) - 1; i >= 0; i--)
+	{
+		if (vertices[i] == v2) {
+			cout << "Delete vertice num " << vertices[i]->id << endl;
+			vertices.erase(vertices.begin() + i);
 		}
 	}
 
@@ -372,7 +374,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
 	{
 		if ((faces[i] == toDelete_f1 && toDelete_half_1 != nullptr) || (faces[i] == toDelete_f2 && toDelete_half_2 != nullptr)) {
-			cout << "Delete face num " << faces[i]->index << endl;
+			cout << "Delete face num " << faces[i]->id << endl;
 			faces.erase(faces.begin() + i);
 		}
 	}
@@ -382,7 +384,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
 	{
 		if (halfedges[i] == toDelete_half_1 || halfedges[i] == toDelete_half_1_twin || halfedges[i] == toDelete_half_2 || halfedges[i] == toDelete_half_2_twin || halfedges[i] == e || halfedges[i] == e_twin) {
-			cout << "Delete halfedge num " << halfedges[i]->index << endl;
+			cout << "Delete halfedge num " << halfedges[i]->id << endl;
 			halfedges.erase(halfedges.begin() + i);
 		}
 	}
@@ -397,13 +399,17 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
-	cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->index << endl;
+	cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
 
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
 		myHalfedge* halfedge_b = e->next->twin;
+		// change source orignof if it's b
+		if (halfedge_b->source->originof == halfedge_b) {
+			halfedge_b->source->originof = halfedge_b->twin->next;
+		}
 
-		// repalce halfedge b by a
+		// replace halfedge b by a
 		halfedge_a->next = halfedge_b->next;
 		halfedge_a->prev = halfedge_b->prev;
 		halfedge_a->adjacent_face = halfedge_b->adjacent_face;
