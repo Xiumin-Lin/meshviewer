@@ -148,19 +148,19 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	cout << "-----------------start faces computeNormals" << endl;
+	//cout << "-----------------start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
-		cout << i << " : " << faces[i]->id << endl;
+		//cout << i << " : " << faces[i]->id << endl;
 		faces[i]->computeNormal();
 	}
-	cout << "-----------------start vertices computeNormals" << endl;
+	//cout << "-----------------start vertices computeNormals" << endl;
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		cout << i << " : " << vertices[i]->id << endl;
+		//cout << i << " : " << vertices[i]->id << endl;
 		vertices[i]->computeNormal();
 	}
-	cout << "-----------------end vertices computeNormals" << endl;
+	//cout << "-----------------end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -337,7 +337,7 @@ void myMesh::collapse(myHalfedge* e) {
 	// calculate the center point
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
-	cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
+	//cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
 	*v1->point /= 2; // v1 is the new_center_vertex
 
@@ -363,7 +363,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(vertices.size()) - 1; i >= 0; i--)
 	{
 		if (vertices[i] == v2) {
-			cout << "Delete vertice num " << vertices[i]->id << endl;
+			//cout << "Delete vertice num " << vertices[i]->id << endl;
 			vertices.erase(vertices.begin() + i);
 		}
 	}
@@ -372,7 +372,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
 	{
 		if ((faces[i] == toDelete_f1 && toDelete_half_1 != nullptr) || (faces[i] == toDelete_f2 && toDelete_half_2 != nullptr)) {
-			cout << "Delete face num " << faces[i]->id << endl;
+			//cout << "Delete face num " << faces[i]->id << endl;
 			faces.erase(faces.begin() + i);
 		}
 	}
@@ -382,7 +382,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
 	{
 		if (halfedges[i] == toDelete_half_1 || halfedges[i] == toDelete_half_1_twin || halfedges[i] == toDelete_half_2 || halfedges[i] == toDelete_half_2_twin || halfedges[i] == e || halfedges[i] == e_twin) {
-			cout << "Delete halfedge num " << halfedges[i]->id << endl;
+			//cout << "Delete halfedge num " << halfedges[i]->id << endl;
 			halfedges.erase(halfedges.begin() + i);
 		}
 	}
@@ -397,7 +397,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
-	cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
+	//cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
 
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;

@@ -10,7 +10,7 @@ static int vertex_id_cpt = 1;
 myVertex::myVertex(void)
 {
 	id = vertex_id_cpt++;
-	cout << "create vertex : " << id << endl;
+	//cout << "create vertex : " << id << endl;
 	point = NULL;
 	originof = NULL;
 	normal = new myVector3D(1.0,1.0,1.0);
@@ -18,7 +18,7 @@ myVertex::myVertex(void)
 
 myVertex::~myVertex(void)
 {
-	cout << "delete vertex : " << id << endl;
+	//cout << "delete vertex : " << id << endl;
 	if (normal) delete normal;
 }
 
@@ -27,7 +27,7 @@ void myVertex::computeNormal()
 	delete normal;
 	normal = new myVector3D(0.0, 0.0, 0.0);
 	myHalfedge* steph = originof;
-	cout << "do steph : " << steph->id << endl;
+	//cout << "do steph : " << steph->id << endl;
 	do {
 		
 		*normal += *(steph->adjacent_face->normal);
