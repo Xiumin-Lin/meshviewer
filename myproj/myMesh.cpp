@@ -5,6 +5,7 @@
 #include <map>
 #include <utility>
 #include <GL/glew.h>
+#include <algorithm>
 #include "myvector3d.h"
 
 using namespace std;
@@ -432,4 +433,26 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		cout << "Can't collapse face, not enought vertices !" << endl;
 		return nullptr;
 	}
+}
+
+myHalfedge* myMesh::getShortestEdge() {
+	map<int, int> twin_map;
+	vector<pair<double, myHalfedge*>> distances;
+	for (size_t i = 0; i < halfedges.size(); i++)
+	{
+		myHalfedge* h = halfedges[i];
+		auto twin_it = twin_map.find(h->twin->id);
+		if (twin_it == twin_map.end()) {
+			twin_map[h->id] = h->twin->id;
+		}
+		else continue;
+
+		myPoint3D* p1 = h->source->point;
+		myPoint3D* p2 = h->twin->source->point;
+
+		distances.push_back(make_pair(p1->dist(*p2), h));
+	}
+
+	sort(distances.begin(), distances.end());
+	return distances[0].second;
 }

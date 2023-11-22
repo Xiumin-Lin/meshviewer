@@ -169,7 +169,7 @@ void menu(int item)
 		{
 			clear();
 			cout << "*****************start collapse" << endl;
-			m->collapse(m->halfedges[0]);
+			m->collapse(m->getShortestEdge());
 
 			cout << "*****************computeNormals" << endl;
 			m->computeNormals();

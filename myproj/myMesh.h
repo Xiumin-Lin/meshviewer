@@ -30,6 +30,7 @@ public:
 
 	void myMesh::collapse(myHalfedge *);
 	myHalfedge* myMesh::collapseFace(myHalfedge *);
+	myHalfedge* myMesh::getShortestEdge();
 
 	void clear();
 
