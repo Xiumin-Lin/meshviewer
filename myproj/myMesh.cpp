@@ -215,10 +215,72 @@ void myMesh::splitFaceQUADS(myFace *f, myPoint3D *p)
 	/**** TODO ****/
 }
 
+myVertex* computeFaceCenterPoint(myFace* face) {
+	myPoint3D* center_p = new myPoint3D();
 
+	double vertex_cpt = 0;
+	myHalfedge* step_halfedge = face->adjacent_halfedge;
+	do
+	{
+		*center_p += *(step_halfedge->source->point);
+		vertex_cpt++;
+		step_halfedge = step_halfedge->next;
+	} while (face->adjacent_halfedge != step_halfedge);
+	*center_p / vertex_cpt;
+
+	myVertex* center_vertex = new myVertex();
+	center_vertex->point = center_p;
+	return center_vertex;
+}
+
+myVertex* computeEdgeMidPoint(myHalfedge* e) {
+	myVertex* middle_e = new myVertex();
+	*(middle_e->point) = (*(e->source->point) + *(e->twin->source->point)) / 2;
+	return middle_e;
+}
+
+// https://www.youtube.com/watch?v=mfp1Z1mBClc
 void myMesh::subdivisionCatmullClark()
 {
 	/**** TODO ****/
+	vector<myVertex*> newFacePoints;
+	vector<myVertex*> newEdgepoints;
+	vector<myFace*> newFaces;
+
+	// Step 1: Create new vertices as face center point
+	for (auto& face : faces) {
+		newFacePoints.push_back(computeFaceCenterPoint(face));
+	}
+
+	// Step 2: Create new vertices as edge middle point
+	for (auto& edge : halfedges) {
+		newEdgepoints.push_back(computeEdgeMidPoint(edge));
+	}
+
+	// Step 3: Connection
+	// addNewVertexToEdge
+		// create 2 new halfedge
+		// create 2 new twin
+		// link new halfedge to edge vertices
+		// delete old halfedge and twin
+
+	// addVertexToFaceCenter
+		// link center_v to n middle edge point of the face
+		// create n new faces
+		// create 2 new halfedges for each new face
+		// link halfedges
+		// link twin if possible
+		// delete old face
+
+	// Step 4: Move newEdgepoints
+		// e = (originP_1 + originP_2 + newFaceCenterP_1 + newFaceCenterP_2) / 4
+
+	// Step 5: Move origins point
+		// new_OriginP = Q / n + 2R / n + (n - 3)S/n => n is the number of faces the originP touch
+		// Q = sum(all newFaceCenterP of face that touch the originP) / n
+		// R = sum(all newMiddleEdgeP of edge that touch the originP) / n
+		// S = originP
+
 }
 
 void associateTwin(map<pair<int, int>, myHalfedge*>& twin_map, int idx_vertex_a, int idx_vertex_b, myHalfedge* e)
