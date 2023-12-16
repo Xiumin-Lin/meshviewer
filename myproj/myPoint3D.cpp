@@ -23,6 +23,7 @@ myPoint3D myPoint3D::operator+(myPoint3D & v1)
 {
 	return myPoint3D(X + v1.X, Y + v1.Y, Z + v1.Z);
 }
+
 myPoint3D & myPoint3D::operator+=(myVector3D & v1)
 {
 	X += v1.dX;
@@ -93,10 +94,10 @@ void myPoint3D::print(char *s)
 double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2)
 {
 	//distance between current point, and the segment defined by p1,p2.
-	myVector3D vect_p1_p2(p2->X - p1->X, p2->Y - p1->Y, p2->Z - p1->Z);
-	myVector3D vect_curr_p1(X - p1->X, Y - p1->Y, Z - p1->Z);
+	myVector3D vect_p1_p2 = *p2 - *p1;
+	myVector3D vect_p1_curr = *this - *p1;
 
-	double proj = vect_p1_p2 * vect_curr_p1;
+	double proj = vect_p1_p2 * vect_p1_curr;
 	double lenSquare = pow(vect_p1_p2.length(), 2);
 	double d = proj / lenSquare;
 
@@ -107,7 +108,7 @@ double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2)
 		return this->dist(*p2);
 	}
 	else {
-		myPoint3D h = *p1 + (vect_curr_p1 * d);
+		myPoint3D h = *p1 + (vect_p1_curr * d);
 		return this->dist(h);
 	}
 }

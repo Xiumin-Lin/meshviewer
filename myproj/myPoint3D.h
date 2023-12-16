@@ -22,14 +22,13 @@ public:
   double dist(myPoint3D p1);
   myPoint3D operator+(myVector3D & v1);
   myPoint3D operator+(myPoint3D & v1);
-  myPoint3D & operator+=(myVector3D & v1);
-  myPoint3D & operator+=(myPoint3D & v1);
-
-  myPoint3D & operator/=(double d);
-  myPoint3D & operator*=(double d);
-
   myPoint3D operator/(double d);
   myPoint3D operator*(double d);
+
+  myPoint3D & operator+=(myVector3D & v1);
+  myPoint3D & operator+=(myPoint3D & v1);
+  myPoint3D & operator/=(double d);
+  myPoint3D & operator*=(double d);
 
   myVector3D operator-(myPoint3D & p1);
   void rotate(myVector3D & lp, double theta);
