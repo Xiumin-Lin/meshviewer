@@ -2,7 +2,7 @@
 #include "mypoint3d.h"
 #include <iostream>
  
-myVector3D::myVector3D() {}
+myVector3D::myVector3D(): myVector3D(0, 0, 0) {}
 
 myVector3D::myVector3D(double dx, double dy, double dz)
 {
@@ -65,8 +65,8 @@ myVector3D myVector3D::crossproduct(myVector3D & v1)
 
 void myVector3D::setNormal(myPoint3D *p1, myPoint3D *p2, myPoint3D *p3)
 {
-	myVector3D v1 (p2->X - p1->X, p2->Y - p1->Y, p2->Z - p1->Z);
-	myVector3D v2 (p3->X - p2->X, p3->Y - p2->Y, p3->Z - p2->Z);
+	myVector3D v1 = *p2 - *p1;
+	myVector3D v2 = *p3 - *p2;
 
 	crossproduct(v1, v2);
 	normalize();

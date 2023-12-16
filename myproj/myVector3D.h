@@ -14,8 +14,7 @@ public:
 		double components[3];
 		struct { double dX, dY, dZ; };
 	};
-   
-  
+
   myVector3D();
 
   myVector3D(double dx, double dy, double dz);
@@ -30,9 +29,9 @@ public:
   myVector3D crossproduct(myVector3D &);
   void setNormal(myPoint3D *p1, myPoint3D *p2, myPoint3D *p3);
   void rotate(myVector3D & lp, double theta);
-  double length( );
+  double length();
   void clear();
-  void normalize( );
+  void normalize();
   void print(char *s);
 };
 
