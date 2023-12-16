@@ -18,8 +18,8 @@ myVertex::myVertex(void)
 
 myVertex::~myVertex(void)
 {
-	//cout << "delete vertex : " << id << endl;
 	if (normal) delete normal;
+	if (point) delete point;
 }
 
 void myVertex::computeNormal()
@@ -29,7 +29,6 @@ void myVertex::computeNormal()
 	myHalfedge* steph = originof;
 	//cout << "do steph : " << steph->id << endl;
 	do {
-		
 		*normal += *(steph->adjacent_face->normal);
 		steph = steph->twin->next;
 	} while (originof != steph);

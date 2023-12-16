@@ -7,7 +7,6 @@ class myFace
 {
 public:
 	myHalfedge *adjacent_halfedge;
-
 	myVector3D *normal;
 
 	int id;

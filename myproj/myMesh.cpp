@@ -19,6 +19,9 @@ myMesh::myMesh(void)
 myMesh::~myMesh(void)
 {
 	/**** TODO ****/
+	for (auto v : vertices)		if (v) delete v;
+	for (auto h : halfedges)	if (h) delete h;
+	for (auto f : faces)		if (f) delete f;
 }
 
 void myMesh::clear()
