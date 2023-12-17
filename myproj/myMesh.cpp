@@ -277,7 +277,7 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	std::cout << "-----------------start faces computeNormals" << endl;
+	//std::cout << "-----------------start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		//std::cout << i << " : " << faces[i]->id << endl;
@@ -289,7 +289,7 @@ void myMesh::computeNormals()
 		//std::cout << i << " : " << vertices[i]->id << endl;
 		vertices[i]->computeNormal();
 	}
-	std::cout << "-----------------end vertices computeNormals" << endl;
+	//std::cout << "-----------------end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -582,13 +582,80 @@ bool myMesh::triangulate(myFace *f)
 	return f->adjacent_halfedge->next->next->next == f->adjacent_halfedge ? true : false;
 }
 
+void myMesh::cleanOverlappingMesh(myVertex* v) {
+	// iterate around face of v
+	myHalfedge* step_h = v->originof;
+	map<int, bool> visited_faces;
+	map<string, myFace*> face_map;
+	vector<myFace*> toDeteledFaces;
+	// iterate around face of v
+	do {
+		myHalfedge* innerstep = step_h;
+		if (step_h->adjacent_face == NULL)
+		{
+			//std::cout << "cleanOverlappingMesh >> boundary halfedge for " << step_h->id << endl;
+			if (step_h->twin->next == step_h) break;
+		}
+		else {
+			std::cout << "cleanOverlappingMesh >> face " << step_h->adjacent_face->id << endl;
+
+			if (visited_faces.find(step_h->adjacent_face->id) != visited_faces.end()) {
+				std::cout << "Error! Vertex loop indefinitely for " << v->id << std::endl;
+				break;
+			}
+			visited_faces[step_h->adjacent_face->id] = true;
+
+			// get the list of vertex of the face
+			vector<int> vertex_list;
+			do {
+				vertex_list.push_back(innerstep->source->id);
+				innerstep = innerstep->next;
+			} while (innerstep->source->id != step_h->source->id);
+
+			// convert list to string like "1,2,3,4"
+			sort(vertex_list.begin(), vertex_list.end());
+			stringstream ss;
+			for (size_t i = 0; i < vertex_list.size(); i++)
+			{
+				ss << vertex_list[i];
+				if (i != vertex_list.size() - 1) ss << ",";
+			}
+			string key = ss.str();
+			//cout << "face key = " << key << endl;
+
+			// if the face already exist, detele it, else add it 
+			if (face_map.find(key) == face_map.end()) face_map[key] = step_h->adjacent_face;
+			else toDeteledFaces.push_back(step_h->adjacent_face);
+		}
+		// go to next face
+		step_h = step_h->twin->next;
+	} while (step_h != v->originof);
+
+	// delete faces
+	for (myFace* f : toDeteledFaces) {
+		std::cout << "delete face " << f->id << endl;
+		myHalfedge* step = f->adjacent_halfedge;
+		do {
+			step->adjacent_face = NULL;
+			step = step->next;
+		} while (step != f->adjacent_halfedge);
+
+		for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
+		{
+			if (faces[i] == f) {
+				faces.erase(faces.begin() + i);
+			}
+		}
+	}
+}
+
 void myMesh::collapse(myHalfedge* e) {
 	if (e == NULL) return;
-	cout << "collapse edge " << e->id << endl;
+	//cout << "collapse edge " << e->id << endl;
 	// calculate the middle point of the edge
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
-	std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
+	//std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
 	*v1->point /= 2; // v1 is the new_middle_vertex
 
@@ -603,13 +670,13 @@ void myMesh::collapse(myHalfedge* e) {
 	// collapse face
 	myFace* toDelete_f1 = e->adjacent_face;
 	myHalfedge* toDelete_half_1 = collapseFace(e);
-	cout << "toDelete_half_1 = " << toDelete_half_1 << endl;
+	//cout << "toDelete_half_1 = " << toDelete_half_1 << endl;
 	myHalfedge* toDelete_half_1_twin = (toDelete_half_1 != nullptr) ? toDelete_half_1->twin : nullptr;
 
 	// collapse twin face
 	myFace* toDelete_f2 = e->twin->adjacent_face;
 	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
-	cout << "toDelete_half_2 = " << toDelete_half_2 << endl;
+	//cout << "toDelete_half_2 = " << toDelete_half_2 << endl;
 	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
 	// delete vertice v2
@@ -637,14 +704,14 @@ void myMesh::collapse(myHalfedge* e) {
 			halfedges.erase(halfedges.begin() + i);
 		}
 	}
-
+	cleanOverlappingMesh(v1);
 	checkMesh();
 }
 
 myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 	if (e->adjacent_face == NULL)
 	{
-		cout << "Boundary halfedge !" << endl;
+		//cout << "Boundary halfedge !" << endl;
 		e->next->prev = e->prev;
 		e->prev->next = e->next;
 		e->next->source->originof = e->next;	// don't move this line, it's the result of 3h of debug 
@@ -658,7 +725,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
-	std::cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
+	//std::cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
 
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
@@ -770,11 +837,11 @@ myHalfedge* myMesh::getShortestEdge() {
 			back_inserter(intersection)
 		);
 		int nb_union = h_neighbor_vertex_id.size() + twin_neighbor_vertex_id.size() - intersection.size();
-
+		//cout << "is Boundary" << isBoundary(h) << ", nb_union = " << nb_union << ", intersection.size() = " << intersection.size() << endl;
 		// if it's a boundary halfedge and it's a triangle ==> no collapse
-		if (!isBoundary(h) && nb_union == 3 && intersection.size() == 1)
+		if (isBoundary(h) && nb_union == 3 && intersection.size() == 1)
 		{
-			cout << "boundary halfedge" << endl;
+			cout << "getShortestEdge >> ignore collapse solo triangle" << endl;
 			continue;
 		}
 		myPoint3D* p1 = h->source->point;

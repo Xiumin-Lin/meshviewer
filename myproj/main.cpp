@@ -182,7 +182,7 @@ void menu(int item)
 		{
 			clear();
 			//cout << "*****************start simplification" << endl;
-			for (size_t i = 0; i < 10; i++)
+			for (size_t i = 0; i < 30; i++)
 			{
 				//cout << "*****************start collapse edge " << i << endl;
 				myHalfedge* e = m->getShortestEdge();
@@ -191,7 +191,7 @@ void menu(int item)
 					cout << "no more edge to collapse" << endl;
 					break;
 				}
-				m->collapse(m->getShortestEdge());
+				m->collapse(e);
 				//cout << "*****************computeNormals" << endl;
 				m->computeNormals();
 			}

@@ -28,9 +28,10 @@ public:
 	void triangulate();
 	bool triangulate(myFace *);
 
-	void myMesh::collapse(myHalfedge *);
-	myHalfedge* myMesh::collapseFace(myHalfedge *);
-	myHalfedge* myMesh::getShortestEdge();
+	void collapse(myHalfedge *);
+	void cleanOverlappingMesh(myVertex* v);
+	myHalfedge* collapseFace(myHalfedge *);
+	myHalfedge* getShortestEdge();
 
 	void clear();
 
