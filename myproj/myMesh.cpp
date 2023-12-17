@@ -274,7 +274,6 @@ bool myMesh::readFile(std::string filename)
 	return true;
 }
 
-
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
@@ -328,7 +327,6 @@ void myMesh::normalize()
 	}
 }
 
-
 void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p)
 {
 	/**** TODO ****/
@@ -336,7 +334,6 @@ void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p)
 
 void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p)
 {
-
 	/**** TODO ****/
 }
 
@@ -586,6 +583,7 @@ bool myMesh::triangulate(myFace *f)
 }
 
 void myMesh::collapse(myHalfedge* e) {
+	if (e == NULL) return;
 	cout << "collapse edge " << e->id << endl;
 	// calculate the middle point of the edge
 	myVertex* v1 = e->source;
@@ -603,14 +601,14 @@ void myMesh::collapse(myHalfedge* e) {
 	v1->originof = e->prev->twin;
 	
 	// collapse face
-	myFace* toDelete_f1 = (e->adjacent_face == NULL) ? e->adjacent_face : e->twin->adjacent_face;
-	myHalfedge* toDelete_half_1 = collapseFace((e->adjacent_face == NULL) ? e : e->twin);
+	myFace* toDelete_f1 = e->adjacent_face;
+	myHalfedge* toDelete_half_1 = collapseFace(e);
 	cout << "toDelete_half_1 = " << toDelete_half_1 << endl;
 	myHalfedge* toDelete_half_1_twin = (toDelete_half_1 != nullptr) ? toDelete_half_1->twin : nullptr;
 
 	// collapse twin face
-	myFace* toDelete_f2 = (e->adjacent_face == NULL) ? e->twin->adjacent_face : e->adjacent_face;
-	myHalfedge* toDelete_half_2 = collapseFace((e->adjacent_face == NULL) ? e->twin : e);
+	myFace* toDelete_f2 = e->twin->adjacent_face;
+	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
 	cout << "toDelete_half_2 = " << toDelete_half_2 << endl;
 	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
@@ -697,9 +695,15 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 	}
 }
 
+bool isBoundary(myHalfedge* e) {
+	return e->adjacent_face == NULL || e->twin->adjacent_face == NULL;
+}
+
 myHalfedge* myMesh::getShortestEdge() {
 	map<int, int> twin_map;
-	vector<pair<double, myHalfedge*>> distances;
+	//vector<pair<double, myHalfedge*>> distances;
+	double min_dist = DBL_MAX;
+	myHalfedge* min_edge = NULL;
 	for (size_t i = 0; i < halfedges.size(); i++)
 	{
 		myHalfedge* h = halfedges[i];
@@ -709,12 +713,81 @@ myHalfedge* myMesh::getShortestEdge() {
 		}
 		else continue;
 
+		// ====== check if collapse is possible ======
+#pragma region Check if vertice is boundary
+		bool h_vertex_is_boundary = false;
+		bool twin_vertex_is_boundary = false;
+		// check if h->source is a boundary vertex
+		myHalfedge* steph = h;
+		do {
+			if (steph->adjacent_face == NULL) {
+				h_vertex_is_boundary = true;
+				break;
+			}
+			steph = steph->twin->next;
+		} while (steph != h);
+
+		// check if twin->source is a boundary vertex
+		steph = h->twin;
+		do {
+			if (steph->adjacent_face == NULL) {
+				twin_vertex_is_boundary = true;
+				break;
+			}
+			steph = steph->twin->next;
+		} while (steph != h->twin);
+#pragma endregion
+
+		if (h_vertex_is_boundary && twin_vertex_is_boundary && !isBoundary(h)) continue;
+
+#pragma region Get vertex neighbor vertices
+		vector<int> h_neighbor_vertex_id;
+		vector<int> twin_neighbor_vertex_id;
+		// get all neighbor vertex around the h source vertex
+		myHalfedge* neighbor_v_steph = h->twin;
+		do {
+			h_neighbor_vertex_id.push_back(neighbor_v_steph->source->id);
+			neighbor_v_steph = neighbor_v_steph->next->twin;
+		} while (neighbor_v_steph != h->twin);
+
+		// get all neighbor vertex around the twin h source vertex
+		neighbor_v_steph = h->next->twin;
+		do {
+			twin_neighbor_vertex_id.push_back(neighbor_v_steph->source->id);
+			neighbor_v_steph = neighbor_v_steph->next->twin;
+		} while (neighbor_v_steph != h->next->twin);
+#pragma endregion
+
+		// intersection of the 2 vectors
+		vector<int> intersection;
+		sort(h_neighbor_vertex_id.begin(), h_neighbor_vertex_id.end());
+		sort(twin_neighbor_vertex_id.begin(), twin_neighbor_vertex_id.end());
+		set_intersection(
+			h_neighbor_vertex_id.begin(),
+			h_neighbor_vertex_id.end(),
+			twin_neighbor_vertex_id.begin(),
+			twin_neighbor_vertex_id.end(),
+			back_inserter(intersection)
+		);
+		int nb_union = h_neighbor_vertex_id.size() + twin_neighbor_vertex_id.size() - intersection.size();
+
+		// if it's a boundary halfedge and it's a triangle ==> no collapse
+		if (!isBoundary(h) && nb_union == 3 && intersection.size() == 1)
+		{
+			cout << "boundary halfedge" << endl;
+			continue;
+		}
 		myPoint3D* p1 = h->source->point;
 		myPoint3D* p2 = h->twin->source->point;
 
-		distances.push_back(make_pair(p1->dist(*p2), h));
+		double d = p1->dist(*p2);
+		if (d < min_dist) {
+			min_dist = d;
+			min_edge = h;
+		}
+		//distances.push_back(make_pair(p1->dist(*p2), h));
 	}
 
-	sort(distances.begin(), distances.end()); // TODO to optimize
-	return distances[0].second;
+	//sort(distances.begin(), distances.end()); // TODO to optimize
+	return min_edge;
 }
