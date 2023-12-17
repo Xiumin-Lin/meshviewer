@@ -34,8 +34,10 @@ void myMesh::clear()
 	vector<myFace *> empty_faces;         faces.swap(empty_faces);
 }
 
+/* Test function to assert every mesh is correct */
 void myMesh::checkMesh()
 {
+	// check if each halfedge has a next, prev and twin
 	bool allHasTwin = true;
 	bool allHasNext = true;
 	bool allHasPrev = true;
@@ -82,6 +84,62 @@ void myMesh::checkMesh()
 	if (allHasNext)	std::cout << "Each halfedge has a next!" << std::endl;
 	if (allHasPrev) std::cout << "Each halfedge has a prev!" << std::endl;
 	if (allHasTwin) std::cout << "Each halfedge has a twin!" << std::endl;
+
+	// check if each face can move around
+	bool allFaceCanMoveAround = true;
+	for (myFace* fa : faces)
+	{
+		map<int, bool> visited_vertex;
+		myHalfedge* step_h = fa->adjacent_halfedge;
+		int cpt_v = 0;
+		do {
+			if (visited_vertex.find(step_h->id) != visited_vertex.end()) {
+				std::cout << "Error! Face loop indefinitely for : " << fa->id << std::endl;
+				allFaceCanMoveAround = false;
+				break;
+			}
+			cpt_v++;
+			visited_vertex[step_h->id] = true;
+			step_h = step_h->next;
+		} while (step_h != fa->adjacent_halfedge);
+
+		if (cpt_v < 3) {
+			std::cout << "Error! Face have less than 3 vertices : " << fa->id << std::endl;
+		}
+	}
+	if (allFaceCanMoveAround) std::cout << "Each face can move around!" << std::endl;
+
+	// check if each vertex can move around
+	bool allVertexCanMoveAround = true;
+	for (myVertex* v : vertices)
+	{
+		map<int, bool> visited_faces;
+		myHalfedge* step_h = v->originof;
+		int cpt_v = 0;
+		do {
+			cout << "visite step > " << step_h->id << endl;
+			step_h->source->point->print("=== > ");
+			if (step_h->adjacent_face != NULL) {
+				cout << "v11111 isite face > " << step_h->adjacent_face->id << endl;
+				if (visited_faces.find(step_h->adjacent_face->id) != visited_faces.end()) {
+					std::cout << "Error! Vertex loop indefinitely for " << v->id << std::endl;
+					allVertexCanMoveAround = false;
+					break;
+				}
+				visited_faces[step_h->adjacent_face->id] = true;
+			} else cout << "visite face > NULL" << endl;
+			cpt_v++;
+			step_h = step_h->twin->next;
+		} while (step_h != v->originof);
+
+		if (cpt_v < 2) {
+			std::cout << "Error! Vertex only have one edge for " << v->id << std::endl;
+		}
+
+		if (allVertexCanMoveAround) break;
+	}
+	if (allVertexCanMoveAround) std::cout << "Each vertex can move around!" << std::endl;
+
 	std::cout << std::endl;
 }
 
@@ -223,7 +281,7 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	//std::cout << "-----------------start faces computeNormals" << endl;
+	std::cout << "-----------------start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		//std::cout << i << " : " << faces[i]->id << endl;
@@ -235,7 +293,7 @@ void myMesh::computeNormals()
 		//std::cout << i << " : " << vertices[i]->id << endl;
 		vertices[i]->computeNormal();
 	}
-	//std::cout << "-----------------end vertices computeNormals" << endl;
+	std::cout << "-----------------end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -531,10 +589,11 @@ bool myMesh::triangulate(myFace *f)
 }
 
 void myMesh::collapse(myHalfedge* e) {
+	cout << "collapse edge " << e->id << endl;
 	// calculate the middle point of the edge
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
-	//std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
+	std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
 	*v1->point /= 2; // v1 is the new_middle_vertex
 
@@ -547,14 +606,14 @@ void myMesh::collapse(myHalfedge* e) {
 	v1->originof = e->prev->twin;
 	
 	// collapse face
-	myFace* toDelete_f1 = e->adjacent_face;
-	myHalfedge* toDelete_half_1 = collapseFace(e);
+	myFace* toDelete_f1 = (e->adjacent_face == NULL) ? e->adjacent_face : e->twin->adjacent_face;
+	myHalfedge* toDelete_half_1 = collapseFace((e->adjacent_face == NULL) ? e : e->twin);
 	cout << "toDelete_half_1 = " << toDelete_half_1 << endl;
 	myHalfedge* toDelete_half_1_twin = (toDelete_half_1 != nullptr) ? toDelete_half_1->twin : nullptr;
 
 	// collapse twin face
-	myFace* toDelete_f2 = e->twin->adjacent_face;
-	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
+	myFace* toDelete_f2 = (e->adjacent_face == NULL) ? e->twin->adjacent_face : e->adjacent_face;
+	myHalfedge* toDelete_half_2 = collapseFace((e->adjacent_face == NULL) ? e->twin : e);
 	cout << "toDelete_half_2 = " << toDelete_half_2 << endl;
 	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
@@ -575,7 +634,7 @@ void myMesh::collapse(myHalfedge* e) {
 			faces.erase(faces.begin() + i);
 		}
 	}
-	
+	cout << "faces.size() = " << faces.size() << endl;
 	// delete halfedge
 	myHalfedge* e_twin = e->twin;
 	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
@@ -585,15 +644,17 @@ void myMesh::collapse(myHalfedge* e) {
 			halfedges.erase(halfedges.begin() + i);
 		}
 	}
+
 	checkMesh();
 }
 
 myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 	if (e->adjacent_face == NULL)
 	{
-		cout << "Can't collapse halfedge, it's not a boundary halfedge !" << endl;
+		cout << "Boundary halfedge !" << endl;
 		e->next->prev = e->prev;
 		e->prev->next = e->next;
+		e->next->source->originof = e->next;
 		return nullptr;
 	}
 
