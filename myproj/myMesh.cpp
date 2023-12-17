@@ -531,12 +531,12 @@ bool myMesh::triangulate(myFace *f)
 }
 
 void myMesh::collapse(myHalfedge* e) {
-	// calculate the center point
+	// calculate the middle point of the edge
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
 	//std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
-	*v1->point /= 2; // v1 is the new_center_vertex
+	*v1->point /= 2; // v1 is the new_middle_vertex
 
 	// change all halfedge of v2 to v1
 	myHalfedge* step = v2->originof;
@@ -549,11 +549,13 @@ void myMesh::collapse(myHalfedge* e) {
 	// collapse face
 	myFace* toDelete_f1 = e->adjacent_face;
 	myHalfedge* toDelete_half_1 = collapseFace(e);
+	cout << "toDelete_half_1 = " << toDelete_half_1 << endl;
 	myHalfedge* toDelete_half_1_twin = (toDelete_half_1 != nullptr) ? toDelete_half_1->twin : nullptr;
 
 	// collapse twin face
 	myFace* toDelete_f2 = e->twin->adjacent_face;
 	myHalfedge* toDelete_half_2 = collapseFace(e->twin);
+	cout << "toDelete_half_2 = " << toDelete_half_2 << endl;
 	myHalfedge* toDelete_half_2_twin = (toDelete_half_2 != nullptr) ? toDelete_half_2->twin : nullptr;
 
 	// delete vertice v2
@@ -587,6 +589,14 @@ void myMesh::collapse(myHalfedge* e) {
 }
 
 myHalfedge* myMesh::collapseFace(myHalfedge* e) {
+	if (e->adjacent_face == NULL)
+	{
+		cout << "Can't collapse halfedge, it's not a boundary halfedge !" << endl;
+		e->next->prev = e->prev;
+		e->prev->next = e->next;
+		return nullptr;
+	}
+
 	myHalfedge* step = e;
 	int cpt = 0;
 	do
@@ -594,21 +604,21 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
-	//std::cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
+	std::cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
 
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
 		myHalfedge* halfedge_b = e->next->twin;
 		// change source orignof if it's b
 		if (halfedge_b->source->originof == halfedge_b) {
-			halfedge_b->source->originof = halfedge_b->twin->next;
+			halfedge_b->source->originof = halfedge_a;
 		}
 
 		// replace halfedge b by a
 		halfedge_a->next = halfedge_b->next;
 		halfedge_a->prev = halfedge_b->prev;
 		halfedge_a->adjacent_face = halfedge_b->adjacent_face;
-		halfedge_a->adjacent_face->adjacent_halfedge = halfedge_a;
+		if (halfedge_a->adjacent_face != NULL) halfedge_a->adjacent_face->adjacent_halfedge = halfedge_a;
 
 		halfedge_a->next->prev = halfedge_a;
 		halfedge_a->prev->next = halfedge_a;
@@ -623,7 +633,6 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		prev->next = next;
 
 		e->adjacent_face->adjacent_halfedge = next;
-
 		return nullptr;
 	}
 	else {
