@@ -594,11 +594,10 @@ void myMesh::cleanOverlappingMesh(myVertex* v) {
 		if (step_h->adjacent_face == NULL)
 		{
 			//std::cout << "cleanOverlappingMesh >> boundary halfedge for " << step_h->id << endl;
-			if (step_h->twin->next == step_h) break;
+			if (step_h->twin->next == step_h) break; // if the halfedge is alone, break
 		}
 		else {
-			std::cout << "cleanOverlappingMesh >> face " << step_h->adjacent_face->id << endl;
-
+			//std::cout << "cleanOverlappingMesh >> face " << step_h->adjacent_face->id << endl
 			if (visited_faces.find(step_h->adjacent_face->id) != visited_faces.end()) {
 				std::cout << "Error! Vertex loop indefinitely for " << v->id << std::endl;
 				break;
@@ -841,7 +840,7 @@ myHalfedge* myMesh::getShortestEdge() {
 		// if it's a boundary halfedge and it's a triangle ==> no collapse
 		if (isBoundary(h) && nb_union == 3 && intersection.size() == 1)
 		{
-			cout << "getShortestEdge >> ignore collapse solo triangle" << endl;
+			std::cout << "getShortestEdge >> ignore collapse solo triangle" << endl;
 			continue;
 		}
 		myPoint3D* p1 = h->source->point;
