@@ -416,7 +416,7 @@ void initMesh()
 	closest_face = NULL;
 
 	m = new myMesh();
-	if (m->readFile("cube.obj")) {
+	if (m->readFile("c.obj")) {
 		m->computeNormals();
 		makeBuffers(m);
 	}

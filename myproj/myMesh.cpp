@@ -381,64 +381,145 @@ void myMesh::splitFaceQUADS(myFace* f, myVertex* center_v, map<myHalfedge*, myVe
 			faceHalfedgeList.push_back(step_h);
 			middleVertexList.push_back(halfedgesPointsMap[step_h]);
 		}
-		else if (halfedgesPointsMap.find(step_h->twin) != halfedgesPointsMap.end())  {
+		else if (halfedgesPointsMap.find(step_h->next->twin) != halfedgesPointsMap.end())  {
 			faceHalfedgeList.push_back(step_h);	// do not change step_h
-			middleVertexList.push_back(halfedgesPointsMap[step_h->twin]);
-		}
+			middleVertexList.push_back(halfedgesPointsMap[step_h->next->twin]);
+		} else cout << "Error! Cannot find halfedge in map!" << endl;
 		step_h = step_h->next;
 	} while (f->adjacent_halfedge != step_h);
 
-	map<pair<int, int>, myHalfedge*> face_edge_map;
-	size_t size = faceHalfedgeList.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		myHalfedge* edge = faceHalfedgeList[i];
-		myVertex* middle_v = middleVertexList[i];
-		
-		// create new halfedges
-		myHalfedge* new_e = new myHalfedge();		// center to edge
-		myHalfedge* new_twin = new myHalfedge();	// edge to center
-		halfedges.push_back(new_e);
-		halfedges.push_back(new_twin);
+	// create new halfedges
+	myHalfedge* e1 = new myHalfedge();
+	myHalfedge* e1_twin = new myHalfedge();
+	e1->source = center_v; e1->source->originof = e1;
+	e1_twin->source = middleVertexList[0];
+	e1->twin = e1_twin;
+	e1->twin->twin = e1;
 
-		new_e->source = center_v;
-		new_twin->source = middle_v;
-		new_e->source->originof = new_e;
+	myHalfedge* e2 = new myHalfedge();
+	myHalfedge* e2_twin = new myHalfedge();
+	e2->source = center_v;
+	e2_twin->source = middleVertexList[1];
+	e2->twin = e2_twin;
+	e2->twin->twin = e2;
 
-		// link twins
-		new_e->twin = new_twin;
-		new_twin->twin = new_e;
+	myHalfedge* e3 = new myHalfedge();
+	myHalfedge* e3_twin = new myHalfedge();
+	e3->source = center_v;
+	e3_twin->source = middleVertexList[2];
+	e3->twin = e3_twin;
+	e3->twin->twin = e3;
 
-		// link halfedges
-		new_e->next = edge->next;
-		new_e->next->prev = new_e;
+	myHalfedge* e4 = new myHalfedge();
+	myHalfedge* e4_twin = new myHalfedge();
+	e4->source = center_v;
+	e4_twin->source = middleVertexList[3];
+	e4->twin = e4_twin;
+	e4->twin->twin = e4;
 
-		new_twin->prev = edge;
-		new_twin->prev->next = new_twin;
-		
-		int prevMiddleId = (i - 1 < 0) ? middleVertexList[(i - 1 + size) % size]->id : middleVertexList[(i - 1) % size]->id;
-		auto prev_it = face_edge_map.find(make_pair(center_v->id, prevMiddleId));
-		if (prev_it == face_edge_map.end()) {
-			face_edge_map[make_pair(middle_v->id, center_v->id)] = new_twin;
-		}
-		else {
-			new_twin->next = prev_it->second;
-			new_twin->next->prev = new_twin;
-		}
+	halfedges.push_back(e1);
+	halfedges.push_back(e2);
+	halfedges.push_back(e3);
+	halfedges.push_back(e4);
+	halfedges.push_back(e1_twin);
+	halfedges.push_back(e2_twin);
+	halfedges.push_back(e3_twin);
+	halfedges.push_back(e4_twin);
+	
+	// define links
 
-		int nextMiddleId = middleVertexList[(i + 1) % size]->id;
-		auto next_it = face_edge_map.find(make_pair(nextMiddleId, center_v->id));
-		if (next_it == face_edge_map.end()) {
-			face_edge_map[make_pair(center_v->id, middle_v->id)] = new_e;
-		}
-		else {
-			new_e->prev = next_it->second;
-			new_e->prev->next = new_e;
-		}
-	}
+	e1->next = faceHalfedgeList[0]->next;
+	e2->next = faceHalfedgeList[1]->next;
+	e3->next = faceHalfedgeList[2]->next;
+	e4->next = faceHalfedgeList[3]->next;
+
+	e1_twin->prev = faceHalfedgeList[0];
+	e2_twin->prev = faceHalfedgeList[1];
+	e3_twin->prev = faceHalfedgeList[2];
+	e4_twin->prev = faceHalfedgeList[3];
+
+	e1->next->prev = e1;
+	e2->next->prev = e2;
+	e3->next->prev = e3;
+	e4->next->prev = e4;
+
+	e1_twin->prev->next = e1_twin;
+	e2_twin->prev->next = e2_twin;
+	e3_twin->prev->next = e3_twin;
+	e4_twin->prev->next = e4_twin;
+
+	e1->prev = e2_twin;
+	e2->prev = e3_twin;
+	e3->prev = e4_twin;
+	e4->prev = e1_twin;
+
+	e1->prev->next = e1;
+	e2->prev->next = e2;
+	e3->prev->next = e3;
+	e4->prev->next = e4;
+
+	e1_twin->next = e4;
+	e2_twin->next = e1;
+	e3_twin->next = e2;
+	e4_twin->next = e3;
+
+	e1_twin->next->prev = e1_twin;
+	e2_twin->next->prev = e2_twin;
+	e3_twin->next->prev = e3_twin;
+	e4_twin->next->prev = e4_twin;
+
+	// generic
+	//size_t size = faceHalfedgeList.size();
+	//map<pair<int, int>, myHalfedge*> face_edge_map;
+	//for (size_t i = 0; i < size; i++)
+	//{
+	//	myHalfedge* edge = faceHalfedgeList[i];
+	//	myVertex* middle_v = middleVertexList[i];
+	//	
+	//	// create new halfedges
+	//	myHalfedge* new_e = new myHalfedge();		// center to edge
+	//	myHalfedge* new_twin = new myHalfedge();	// edge to center
+	//	halfedges.push_back(new_e);
+	//	halfedges.push_back(new_twin);
+
+	//	new_e->source = center_v;
+	//	new_twin->source = middle_v;
+	//	new_e->source->originof = new_e;
+
+	//	// link twins
+	//	new_e->twin = new_twin;
+	//	new_twin->twin = new_e;
+
+	//	// link halfedges
+	//	new_e->next = edge->next;
+	//	new_e->next->prev = new_e;
+
+	//	new_twin->prev = edge;
+	//	new_twin->prev->next = new_twin;
+	//	
+	//	int prevMiddleId = (i - 1 < 0) ? middleVertexList[(i - 1 + size) % size]->id : middleVertexList[(i - 1) % size]->id;
+	//	auto prev_it = face_edge_map.find(make_pair(center_v->id, prevMiddleId));
+	//	if (prev_it == face_edge_map.end()) {
+	//		face_edge_map[make_pair(middle_v->id, center_v->id)] = new_twin;
+	//	}
+	//	else {
+	//		new_twin->next = prev_it->second;
+	//		new_twin->next->prev = new_twin;
+	//	}
+
+	//	int nextMiddleId = middleVertexList[(i + 1) % size]->id;
+	//	auto next_it = face_edge_map.find(make_pair(nextMiddleId, center_v->id));
+	//	if (next_it == face_edge_map.end()) {
+	//		face_edge_map[make_pair(center_v->id, middle_v->id)] = new_e;
+	//	}
+	//	else {
+	//		new_e->prev = next_it->second;
+	//		new_e->prev->next = new_e;
+	//	}
+	//}
 
 	myFace* new_little_face = f;
-	for (size_t i = 0; i < size; i++)
+	for (size_t i = 0; i < faceHalfedgeList.size(); i++)
 	{
 		myHalfedge* edge = faceHalfedgeList[i];
 		// create face (use the initial face first before create new one)
@@ -448,10 +529,13 @@ void myMesh::splitFaceQUADS(myFace* f, myVertex* center_v, map<myHalfedge*, myVe
 		}
 		new_little_face->adjacent_halfedge = edge;
 
-		// settup adjacent_halfedge for each halfedge of the little face
+		// setup adjacent_halfedge for each halfedge of the little face
 		myHalfedge* step_h = edge;
 		do
 		{
+			if (step_h->twin->source != step_h->next->source) {
+				std::cout << "Errorss! Twin of halfedge has not the same source as the next of halfedge!" << std::endl;
+			}
 			step_h->adjacent_face = new_little_face;
 			step_h = step_h->next;
 		} while (step_h != edge);
