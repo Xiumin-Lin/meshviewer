@@ -342,6 +342,7 @@ void myMesh::splitEdge(myHalfedge* e1, myVertex* v) { // custom
 	myHalfedge* new_etwin = new myHalfedge();
 	new_he->source = v;
 	new_etwin->source = v;
+	new_he->source->originof = new_he;
 
 	// link twins
 	new_he->twin = e1->twin;
@@ -362,6 +363,9 @@ void myMesh::splitEdge(myHalfedge* e1, myVertex* v) { // custom
 	new_etwin->next = etwin->next;
 	new_etwin->prev->next = new_etwin;
 	new_etwin->next->prev = new_etwin;
+
+	halfedges.push_back(new_he);
+	halfedges.push_back(new_etwin);
 }
 
 void myMesh::splitFaceQUADS(myFace* f, myPoint3D* p) { /**** TODO ****/ }
@@ -390,6 +394,7 @@ myVertex* computeFaceCenterPoint(myFace* face) {
 
 myVertex* computeEdgeMidPoint(myHalfedge* e) {
 	myVertex* middle_e = new myVertex();
+	middle_e->point = new myPoint3D();
 	*(middle_e->point) = (*(e->source->point) + *(e->twin->source->point)) / 2;
 	return middle_e;
 }
@@ -409,7 +414,7 @@ void myMesh::subdivisionCatmullClark()
 		myVertex* center_v = computeFaceCenterPoint(face);
 		newFacePoints.push_back(center_v);
 		facePointsMap[face] = center_v;
-		vertices.push_back(center_v);
+		//vertices.push_back(center_v);
 	}
 
 	// Step 2: Create new vertices as edge middle point
@@ -430,62 +435,14 @@ void myMesh::subdivisionCatmullClark()
 		myVertex* middle_v = kv.second;
 		myHalfedge* edge = kv.first;
 		splitEdge(edge, middle_v);
-		
-
-
-
-		myVertex* middle_v = halfedgesPointsMap[edge];
-		myVertex* middle_v_twin = halfedgesPointsMap[edge->twin];
-		myVertex* face_v = facePointsMap[edge->adjacent_face];
-		myVertex* face_v_twin = facePointsMap[edge->twin->adjacent_face];
-
-		// create new face
-		myFace* new_face = new myFace();
-		newFaces.push_back(new_face);
-
-		
-		myHalfedge* e3 = new myHalfedge();
-		myHalfedge* e4 = new myHalfedge();
-
-		// link halfedges
-		e1->twin = e3;
-		e2->twin = e4;
-		e3->twin = e2;
-		e4->twin = e1;
-
-		e1->next = e2;
-		e2->next = e3;
-		e3->next = e4;
-		e4->next = e1;
-
-		e1->prev = e4;
-		e2->prev = e1;
-		e3->prev = e2;
-		e4->prev = e3;
-
-		e1->source = middle_v;
-		e2->source = middle_v_twin;
-		e3->source = face_v;
-		e4->source = face_v_twin;
-
-		middle_v->originof = e1;
-		middle_v_twin->originof = e2;
-		face_v->originof = e3;
-		face_v_twin->originof = e4;
-
-		new_face->adjacent_halfedge = e1;
-
-		e1->adjacent_face = new_face;
-		e2->adjacent_face = new_face;
-		e3->adjacent_face = new_face;
-		e4->adjacent_face = new_face;
-
-		faces.push_back(new_face);
 	}
 
 	// Connect each new face point to the new edge points of all original edges defining the original face
-	
-
+	for (auto& kv : facePointsMap) {
+		myVertex* middle_v = kv.second;
+		myFace* face = kv.first;
+		splitFaceQUADS(face, middle_v);
+	}
 	
 	// splitFaceQUADS()
 	//addNewVertexToEdge
