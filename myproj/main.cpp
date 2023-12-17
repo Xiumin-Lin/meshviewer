@@ -295,10 +295,10 @@ void display()
 
 			Q->normalize();
 
-			float s1 = *Q * *e->adjacent_face->normal;
-			float s2 = *Q * *e->twin->adjacent_face->normal;
+			float s1 = (e->adjacent_face != NULL) ? *Q * *e->adjacent_face->normal : 0;
+			float s2 = (e->twin->adjacent_face != NULL) ? *Q * *e->twin->adjacent_face->normal : 0;
 
-			if (s1 * s2 < 0) {
+			if (s1 * s2 <= 0) {
 				silhouette_edges.push_back(v1->index);
 				silhouette_edges.push_back(v2->index);
 			}
@@ -410,7 +410,7 @@ void initMesh()
 	closest_face = NULL;
 
 	m = new myMesh();
-	if (m->readFile("c.obj")) {
+	if (m->readFile("dolphin.obj")) {
 		m->computeNormals();
 		makeBuffers(m);
 	}
