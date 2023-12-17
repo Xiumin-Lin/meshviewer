@@ -192,7 +192,7 @@ bool myMesh::readFile(std::string filename)
 			int nbVertex = list.size();
 			myFace* face = new myFace();
 			myHalfedge* prevHalfedge = nullptr;
-			for (size_t i = 0; i < nbVertex; i++)
+			for (int i = 0; i < nbVertex; i++)
 			{
 				int vertex_a = list[i];
 				int vertex_b = list[(i + 1) % nbVertex];
@@ -369,9 +369,93 @@ void myMesh::splitEdge(myHalfedge* e1, myVertex* v) { // custom
 }
 
 void myMesh::splitFaceQUADS(myFace* f, myPoint3D* p) { /**** TODO ****/ }
-void myMesh::splitFaceQUADS(myFace* f, myVertex* v) { // custom
+void myMesh::splitFaceQUADS(myFace* f, myVertex* center_v, map<myHalfedge*, myVertex*>& halfedgesPointsMap) { // custom
 	/**** TODO ****/
+	vector<myHalfedge*> faceHalfedgeList;
+	vector<myVertex*> middleVertexList;
+	myHalfedge* step_h = f->adjacent_halfedge;
+	// get halfedges and middle vertex of the face
+	do
+	{
+		if (halfedgesPointsMap.find(step_h) != halfedgesPointsMap.end()) {
+			faceHalfedgeList.push_back(step_h);
+			middleVertexList.push_back(halfedgesPointsMap[step_h]);
+		}
+		else if (halfedgesPointsMap.find(step_h->twin) != halfedgesPointsMap.end())  {
+			faceHalfedgeList.push_back(step_h);	// do not change step_h
+			middleVertexList.push_back(halfedgesPointsMap[step_h->twin]);
+		}
+		step_h = step_h->next;
+	} while (f->adjacent_halfedge != step_h);
 
+	map<pair<int, int>, myHalfedge*> face_edge_map;
+	size_t size = faceHalfedgeList.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		myHalfedge* edge = faceHalfedgeList[i];
+		myVertex* middle_v = middleVertexList[i];
+		
+		// create new halfedges
+		myHalfedge* new_e = new myHalfedge();		// center to edge
+		myHalfedge* new_twin = new myHalfedge();	// edge to center
+		halfedges.push_back(new_e);
+		halfedges.push_back(new_twin);
+
+		new_e->source = center_v;
+		new_twin->source = middle_v;
+		new_e->source->originof = new_e;
+
+		// link twins
+		new_e->twin = new_twin;
+		new_twin->twin = new_e;
+
+		// link halfedges
+		new_e->next = edge->next;
+		new_e->next->prev = new_e;
+
+		new_twin->prev = edge;
+		new_twin->prev->next = new_twin;
+		
+		int prevMiddleId = (i - 1 < 0) ? middleVertexList[(i - 1 + size) % size]->id : middleVertexList[(i - 1) % size]->id;
+		auto prev_it = face_edge_map.find(make_pair(center_v->id, prevMiddleId));
+		if (prev_it == face_edge_map.end()) {
+			face_edge_map[make_pair(middle_v->id, center_v->id)] = new_twin;
+		}
+		else {
+			new_twin->next = prev_it->second;
+			new_twin->next->prev = new_twin;
+		}
+
+		int nextMiddleId = middleVertexList[(i + 1) % size]->id;
+		auto next_it = face_edge_map.find(make_pair(nextMiddleId, center_v->id));
+		if (next_it == face_edge_map.end()) {
+			face_edge_map[make_pair(center_v->id, middle_v->id)] = new_e;
+		}
+		else {
+			new_e->prev = next_it->second;
+			new_e->prev->next = new_e;
+		}
+	}
+
+	myFace* new_little_face = f;
+	for (size_t i = 0; i < size; i++)
+	{
+		myHalfedge* edge = faceHalfedgeList[i];
+		// create face (use the initial face first before create new one)
+		if (i > 0) {
+			new_little_face = new myFace();
+			faces.push_back(new_little_face);
+		}
+		new_little_face->adjacent_halfedge = edge;
+
+		// settup adjacent_halfedge for each halfedge of the little face
+		myHalfedge* step_h = edge;
+		do
+		{
+			step_h->adjacent_face = new_little_face;
+			step_h = step_h->next;
+		} while (step_h != edge);
+	}
 }
 
 myVertex* computeFaceCenterPoint(myFace* face) {
@@ -412,9 +496,9 @@ void myMesh::subdivisionCatmullClark()
 	// Step 1: Create new vertices as face center point
 	for (myFace* face : faces) {
 		myVertex* center_v = computeFaceCenterPoint(face);
-		newFacePoints.push_back(center_v);
+		//newFacePoints.push_back(center_v);
 		facePointsMap[face] = center_v;
-		//vertices.push_back(center_v);
+		vertices.push_back(center_v);
 	}
 
 	// Step 2: Create new vertices as edge middle point
@@ -424,7 +508,7 @@ void myMesh::subdivisionCatmullClark()
 		if (already_computed_it != halfedgesPointsMap.end()) continue;
 		// compute edge middle point
 		myVertex* middle_v = computeEdgeMidPoint(edge);
-		newEdgepoints.push_back(middle_v);
+		//newEdgepoints.push_back(middle_v);
 		halfedgesPointsMap[edge] = middle_v;
 		vertices.push_back(middle_v);
 	}
@@ -441,7 +525,7 @@ void myMesh::subdivisionCatmullClark()
 	for (auto& kv : facePointsMap) {
 		myVertex* middle_v = kv.second;
 		myFace* face = kv.first;
-		splitFaceQUADS(face, middle_v);
+		splitFaceQUADS(face, middle_v, halfedgesPointsMap);
 	}
 	
 	// splitFaceQUADS()

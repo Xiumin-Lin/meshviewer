@@ -2,6 +2,7 @@
 #include "myFace.h"
 #include "myHalfedge.h"
 #include "myVertex.h"
+#include <map>
 #include <vector>
 #include <string>
 
@@ -27,7 +28,7 @@ public:
 	void splitEdge(myHalfedge *, myVertex*);	// custom
 
 	void splitFaceQUADS(myFace*, myPoint3D*);
-	void splitFaceQUADS(myFace *, myVertex*); // custom
+	void splitFaceQUADS(myFace*, myVertex*, std::map<myHalfedge*, myVertex*>&); // custom
 
 	void triangulate();
 	bool triangulate(myFace *);
