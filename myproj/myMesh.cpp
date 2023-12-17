@@ -22,6 +22,9 @@ myMesh::~myMesh(void)
 	for (auto v : vertices)		if (v) delete v;
 	for (auto h : halfedges)	if (h) delete h;
 	for (auto f : faces)		if (f) delete f;
+	for (myVertex* v : vertices)	if (v) delete v;
+	for (myHalfedge* h : halfedges)	if (h) delete h;
+	for (myFace* f : faces)			if (f) delete f;
 }
 
 void myMesh::clear()
@@ -39,12 +42,58 @@ void myMesh::checkMesh()
 {
 	vector<myHalfedge *>::iterator it;
 	for (it = halfedges.begin(); it != halfedges.end(); it++)
+	bool allHasTwin = true;
+	bool allHasNext = true;
+	bool allHasPrev = true;
+	for (myHalfedge* he : halfedges)
 	{
 		if ((*it)->twin == NULL)
 			break;
+		if (allHasTwin) {
+			if (he->twin == NULL || he->twin == nullptr)
+			{
+				cout << "Error! Not all halfedge have their twins!\n";
+				allHasTwin = false; break;
+			}
+			else if (he->twin->twin != he) {
+				cout << "Error! Twin of halfedge is not the halfedge itself!\n";
+				allHasTwin = false; break;
+			}
+			else if (he->twin->source != he->next->source) {
+				cout << "Error! Twin of halfedge has not the same source as the next of halfedge!\n";
+				allHasTwin = false; break;
+			}
+		}
+
+		if (allHasNext) {
+			if (he->next == NULL || he->next == nullptr)
+			{
+				cout << "Error! Not all halfedge have their next!\n";
+				allHasNext = false; break;
+			}
+			else if (he->next->prev != he) {
+				cout << "Error! halfedge->next->prev should be the halfedge itself\n";
+				allHasNext = false; break;
+			}
+		}
+
+		if (allHasPrev) {
+			if (he->prev == NULL || he->prev == nullptr)
+			{
+				cout << "Error! Not all halfedge have their prev!\n";
+				allHasNext = false; break;
+			}
+			else if (he->prev->next != he) {
+				cout << "Error! halfedge->prev->next should be the halfedge itself!\n";
+				allHasNext = false; break;
+			}
+		}
 	}
 	if (it != halfedges.end()) cout << "Error! Not all edges have their twins!\n";
 	else cout << "Each edge has a twin!\n";
+	if (allHasTwin) cout << "Each halfedge has a twin!\n";
+	if (allHasNext)	cout << "Each halfedge has a next!\n";
+	if (allHasPrev) cout << "Each halfedge has a prev!\n";
 }
 
 
@@ -389,6 +438,7 @@ void myMesh::triangulate()
 			faces.erase(faces.begin() + i);
 		}
 	}
+	checkMesh();
 }
 
 //return false if already triangle, true othewise.
