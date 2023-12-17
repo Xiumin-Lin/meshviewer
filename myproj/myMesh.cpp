@@ -327,33 +327,61 @@ void myMesh::normalize()
 	}
 }
 
-void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p)
-{
+void myMesh::splitFaceTRIS(myFace* f, myPoint3D* p) { /**** TODO ****/ }
+void myMesh::splitFaceTRIS(myFace* f, myVertex* v) { // custom
 	/**** TODO ****/
 }
 
-void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p)
-{
+void myMesh::splitEdge(myHalfedge* e1, myPoint3D* p) { /**** TODO ****/ }
+void myMesh::splitEdge(myHalfedge* e1, myVertex* v) { // custom
 	/**** TODO ****/
+	myHalfedge* etwin = e1->twin;
+
+	// create new halfedges
+	myHalfedge* new_he = new myHalfedge();
+	myHalfedge* new_etwin = new myHalfedge();
+	new_he->source = v;
+	new_etwin->source = v;
+
+	// link twins
+	new_he->twin = e1->twin;
+	new_he->twin->twin = new_he;
+	new_etwin->twin = e1;
+	new_etwin->twin->twin = new_etwin;
+
+	new_he->adjacent_face = e1->adjacent_face;
+	new_etwin->adjacent_face = etwin->adjacent_face;
+
+	// link halfedges
+	new_he->prev = e1;
+	new_he->next = e1->next;
+	new_he->prev->next = new_he;
+	new_he->next->prev = new_he;
+	
+	new_etwin->prev = etwin;
+	new_etwin->next = etwin->next;
+	new_etwin->prev->next = new_etwin;
+	new_etwin->next->prev = new_etwin;
 }
 
-void myMesh::splitFaceQUADS(myFace *f, myPoint3D *p)
-{
+void myMesh::splitFaceQUADS(myFace* f, myPoint3D* p) { /**** TODO ****/ }
+void myMesh::splitFaceQUADS(myFace* f, myVertex* v) { // custom
 	/**** TODO ****/
+
 }
 
 myVertex* computeFaceCenterPoint(myFace* face) {
 	myPoint3D* center_p = new myPoint3D();
 
-	double vertex_cpt = 0;
-	myHalfedge* step_halfedge = face->adjacent_halfedge;
+	double nb_vertex = 0;
+	myHalfedge* step_h = face->adjacent_halfedge;
 	do
 	{
-		*center_p += *(step_halfedge->source->point);
-		vertex_cpt++;
-		step_halfedge = step_halfedge->next;
-	} while (face->adjacent_halfedge != step_halfedge);
-	*center_p / vertex_cpt;
+		*center_p += *(step_h->source->point);
+		nb_vertex++;
+		step_h = step_h->next;
+	} while (face->adjacent_halfedge != step_h);
+	*center_p / nb_vertex;
 
 	myVertex* center_vertex = new myVertex();
 	center_vertex->point = center_p;
@@ -369,52 +397,138 @@ myVertex* computeEdgeMidPoint(myHalfedge* e) {
 // https://www.youtube.com/watch?v=mfp1Z1mBClc
 void myMesh::subdivisionCatmullClark()
 {
-	/**** TODO ****/
-	//vector<myVertex*> newFacePoints;
-	//vector<myVertex*> newEdgepoints;
-	//vector<myFace*> newFaces;
+	vector<myVertex*>	newFacePoints;
+	vector<myVertex*>	newEdgepoints;
+	vector<myFace*>		newFaces;
 
-	//// Step 1: Create new vertices as face center point
-	//for (auto& face : faces) {
-	//	newFacePoints.push_back(computeFaceCenterPoint(face));
-	//}
+	map<myFace*, myVertex*>				facePointsMap;
+	map<myHalfedge*, myVertex*>			halfedgesPointsMap;
+	
+	// Step 1: Create new vertices as face center point
+	for (myFace* face : faces) {
+		myVertex* center_v = computeFaceCenterPoint(face);
+		newFacePoints.push_back(center_v);
+		facePointsMap[face] = center_v;
+		vertices.push_back(center_v);
+	}
 
-	//// Step 2: Create new vertices as edge middle point
-	//for (auto& edge : halfedges) {
-	//	newEdgepoints.push_back(computeEdgeMidPoint(edge));
-	//}
+	// Step 2: Create new vertices as edge middle point
+	for (myHalfedge* edge : halfedges) {
+		// skip if already computed
+		auto already_computed_it = halfedgesPointsMap.find(edge->twin);
+		if (already_computed_it != halfedgesPointsMap.end()) continue;
+		// compute edge middle point
+		myVertex* middle_v = computeEdgeMidPoint(edge);
+		newEdgepoints.push_back(middle_v);
+		halfedgesPointsMap[edge] = middle_v;
+		vertices.push_back(middle_v);
+	}
 
 	// Step 3: Connection
-	// addNewVertexToEdge
-		// create 2 new halfedge
-		// create 2 new twin
-		// link new halfedge to edge vertices
-		// delete old halfedge and twin
+	// Connect each middle point to the associated original edges
+	for (auto& kv : halfedgesPointsMap) {
+		myVertex* middle_v = kv.second;
+		myHalfedge* edge = kv.first;
+		splitEdge(edge, middle_v);
+		
+
+
+
+		myVertex* middle_v = halfedgesPointsMap[edge];
+		myVertex* middle_v_twin = halfedgesPointsMap[edge->twin];
+		myVertex* face_v = facePointsMap[edge->adjacent_face];
+		myVertex* face_v_twin = facePointsMap[edge->twin->adjacent_face];
+
+		// create new face
+		myFace* new_face = new myFace();
+		newFaces.push_back(new_face);
+
+		
+		myHalfedge* e3 = new myHalfedge();
+		myHalfedge* e4 = new myHalfedge();
+
+		// link halfedges
+		e1->twin = e3;
+		e2->twin = e4;
+		e3->twin = e2;
+		e4->twin = e1;
+
+		e1->next = e2;
+		e2->next = e3;
+		e3->next = e4;
+		e4->next = e1;
+
+		e1->prev = e4;
+		e2->prev = e1;
+		e3->prev = e2;
+		e4->prev = e3;
+
+		e1->source = middle_v;
+		e2->source = middle_v_twin;
+		e3->source = face_v;
+		e4->source = face_v_twin;
+
+		middle_v->originof = e1;
+		middle_v_twin->originof = e2;
+		face_v->originof = e3;
+		face_v_twin->originof = e4;
+
+		new_face->adjacent_halfedge = e1;
+
+		e1->adjacent_face = new_face;
+		e2->adjacent_face = new_face;
+		e3->adjacent_face = new_face;
+		e4->adjacent_face = new_face;
+
+		faces.push_back(new_face);
+	}
+
+	// Connect each new face point to the new edge points of all original edges defining the original face
+	
+
+	
+	// splitFaceQUADS()
+	//addNewVertexToEdge
+	//	 create 2 new halfedge
+	//	 create 2 new twin
+	//	 link new halfedge to edge vertices
+	//	 delete old halfedge and twin
+
 
 	// addVertexToFaceCenter
-		// link center_v to n middle edge point of the face
-		// create n new faces
-		// create 2 new halfedges for each new face
-		// link halfedges
-		// link twin if possible
-		// delete old face
+	//	 link center_v to n middle edge point of the face
+	//	 create n new faces
+	//	 create 2 new halfedges for each new face
+	//	 link halfedges
+	//	 link twin if possible
+	//	 delete old face
 
 	// Step 4: Move newEdgepoints
-		// e = (originP_1 + originP_2 + newFaceCenterP_1 + newFaceCenterP_2) / 4
+	//	 e = (originP_1 + originP_2 + newFaceCenterP_1 + newFaceCenterP_2) / 4
 
 	// Step 5: Move origins point
-		// new_OriginP = Q / n + 2R / n + (n - 3)S/n => n is the number of faces the originP touch
-		// Q = sum(all newFaceCenterP of face that touch the originP) / n
-		// R = sum(all newMiddleEdgeP of edge that touch the originP) / n
-		// S = originP
+	//	 new_OriginP = Q / n + 2R / n + (n - 3)S/n => n is the number of faces the originP touch
+	//	 Q = sum(all newFaceCenterP of face that touch the originP) / n
+	//	 R = sum(all newMiddleEdgeP of edge that touch the originP) / n
+	//	 S = originP
+	checkMesh();
+}
 
+/*void myMesh::subdivisionCatmullClark()
+{
 	map<myFace*, myVertex*> facePointsMap;
 	map<myHalfedge*, myVertex*> halfedgesPointsMap;
+	map<pair<int, int>, myHalfedge*> twin_map;
 
 	vector<myVertex*> newVertices;
 	vector<myFace*> newFaces;
+	vector<myHalfedge*> newHalfedges;
 
-	for (size_t idx = 0; idx < faces.size(); idx++) {
+	int sizeV = vertices.size();
+	int sizeH = halfedges.size();
+	int sizeF = faces.size();
+
+	for (size_t idx = 0; idx < sizeF; idx++) {
 		myPoint3D* centerFacePoint = new myPoint3D();
 		myHalfedge* currentEdge = faces[idx]->adjacent_halfedge;
 		int cpt = 0;
@@ -432,8 +546,18 @@ void myMesh::subdivisionCatmullClark()
 		facePointsMap[faces[idx]] = newVertex;
 	}
 
-	for (size_t idx = 0; idx < halfedges.size(); idx++)
+	vector<myHalfedge*> listHalfedges;
+	for (size_t idx = 0; idx < sizeH; idx++)
 	{
+		auto it = std::find(listHalfedges.begin(), listHalfedges.end(), halfedges[idx]->twin);
+		if (it == listHalfedges.end()) {
+			listHalfedges.push_back(halfedges[idx]);
+		}
+		else {
+			halfedgesPointsMap[halfedges[idx]] = halfedgesPointsMap[halfedges[idx]->twin];// peut-être une erreur ici
+			continue;
+		}
+
 		myPoint3D* facePoint1 = halfedges[idx]->source->point;
 		myPoint3D* facePoint2 = halfedges[idx]->twin->source->point;
 		myPoint3D* facePointMap1 = facePointsMap[halfedges[idx]->adjacent_face]->point;
@@ -445,17 +569,18 @@ void myMesh::subdivisionCatmullClark()
 
 		myVertex* newVertex = new myVertex();
 		newVertex->point = edgePoint;
+
 		newVertices.push_back(newVertex);
 		halfedgesPointsMap[halfedges[idx]] = newVertex;
 	}
-
-	for (size_t idx = 0; idx < vertices.size(); idx++)
+	for (size_t idx = 0; idx < sizeV; idx++)
 	{
 		myPoint3D* avgFacePoint = new myPoint3D();
 		myPoint3D* avgEdgePoint = new myPoint3D();
 
 		myHalfedge* currentEdge = vertices[idx]->originof;
 		myHalfedge* startEdge = currentEdge;
+
 		int cpt = 0;
 
 		do
@@ -470,11 +595,112 @@ void myMesh::subdivisionCatmullClark()
 		*avgEdgePoint /= cpt;
 
 		myPoint3D* newPoint = new myPoint3D();
-		*newPoint += *avgFacePoint + *avgEdgePoint * 2 + *vertices[idx]->point * (cpt - 3);
+		// ERREUR ICI SUREMENT
+		*newPoint += (*avgFacePoint + *avgEdgePoint * 2.0 + *vertices[idx]->point * (cpt - 2)) / (cpt + 1); // Marche mais pas la formule
+		//*newPoint += (*avgFacePoint + *avgEdgePoint * 2.0 + *vertices[idx]->point * (cpt - 3)) / cpt; // Marche mais n'est pas la formule
+
 
 		vertices[idx]->point = newPoint;
+
 	}
+	for (size_t idx = 0; idx < sizeF; idx++) {
+		myFace* oldFace = faces[idx];
+		myHalfedge* currentEdge = oldFace->adjacent_halfedge;
+
+		int numVertices = 0;
+
+		do {
+			numVertices++;
+			currentEdge = currentEdge->next;
+		} while (currentEdge != oldFace->adjacent_halfedge);
+		currentEdge = oldFace->adjacent_halfedge;
+
+		for (size_t i = 0; i < numVertices; i++) {
+			myVertex* v1 = currentEdge->source;
+			myVertex* v2 = halfedgesPointsMap[currentEdge];
+			myVertex* v3 = facePointsMap[oldFace];
+			myVertex* v4 = halfedgesPointsMap[currentEdge->prev];
+
+			myFace* newFace = new myFace();
+			newFaces.push_back(newFace);
+
+			myHalfedge* e1 = new myHalfedge();
+			myHalfedge* e2 = new myHalfedge();
+			myHalfedge* e3 = new myHalfedge();
+			myHalfedge* e4 = new myHalfedge();
+
+			////////////// DEBUG - A SUPPRIMER //////////////
+			e1->twin = e3;
+			e2->twin = e4;
+			e3->twin = e2;
+			e4->twin = e1;
+			/////////////////////////////////////////////////
+
+			e1->next = e2;
+			e2->next = e3;
+			e3->next = e4;
+			e4->next = e1;
+
+			e1->prev = e4;
+			e2->prev = e1;
+			e3->prev = e2;
+			e4->prev = e3;
+
+			e1->source = v1;
+			e2->source = v2;
+			e3->source = v3;
+			e4->source = v4;
+
+			v1->originof = e1;
+			v2->originof = e2;
+			v3->originof = e3;
+			v4->originof = e4;
+
+			newFace->adjacent_halfedge = e1;
+
+			e1->adjacent_face = newFace;
+			e2->adjacent_face = newFace;
+			e3->adjacent_face = newFace;
+			e4->adjacent_face = newFace;
+
+			faces.push_back(newFace);
+			newHalfedges.push_back(e1);
+			newHalfedges.push_back(e2);
+			newHalfedges.push_back(e3);
+			newHalfedges.push_back(e4);
+
+			
+			// NE MARCHE PAS
+			associateTwin(twin_map, e1->source->index, e4->source->index, e2);
+			associateTwin(twin_map, e2->source->index, e1->source->index, e3);
+			associateTwin(twin_map, e3->source->index, e2->source->index, e4);
+			associateTwin(twin_map, e4->source->index, e3->source->index, e1);
+			
+			currentEdge = currentEdge->prev;
+		}
+	}
+
+	for (size_t idx = 0; idx < sizeF; idx++) {
+		delete faces[idx];
+	}
+	faces.clear();
+	faces = newFaces;
+
+	int sizeNV = newVertices.size();
+	for (size_t i = 0; i < sizeNV; i++)
+	{
+		vertices.push_back(newVertices[i]);
+	}
+
+	for (size_t idx = 0; idx < sizeH; idx++) {
+		delete halfedges[idx];
+	}
+	halfedges.clear();
+	halfedges = newHalfedges;
+
+	checkMesh();
 }
+*/
 
 void associateTwin(map<pair<int, int>, myHalfedge*>& twin_map, int idx_vertex_a, int idx_vertex_b, myHalfedge* e)
 {
@@ -767,7 +993,6 @@ bool isBoundary(myHalfedge* e) {
 
 myHalfedge* myMesh::getShortestEdge() {
 	map<int, int> twin_map;
-	//vector<pair<double, myHalfedge*>> distances;
 	double min_dist = DBL_MAX;
 	myHalfedge* min_edge = NULL;
 	for (size_t i = 0; i < halfedges.size(); i++)
@@ -851,9 +1076,6 @@ myHalfedge* myMesh::getShortestEdge() {
 			min_dist = d;
 			min_edge = h;
 		}
-		//distances.push_back(make_pair(p1->dist(*p2), h));
 	}
-
-	//sort(distances.begin(), distances.end()); // TODO to optimize
 	return min_edge;
 }

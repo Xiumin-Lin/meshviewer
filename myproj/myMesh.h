@@ -20,10 +20,14 @@ public:
 
 	void subdivisionCatmullClark();
 
-	void splitFaceTRIS(myFace *, myPoint3D *);
+	void splitFaceTRIS(myFace*, myPoint3D*);
+	void splitFaceTRIS(myFace *, myVertex*); // custom
 
-	void splitEdge(myHalfedge *, myPoint3D *);
-	void splitFaceQUADS(myFace *, myPoint3D *);
+	void splitEdge(myHalfedge*, myPoint3D*);
+	void splitEdge(myHalfedge *, myVertex*);	// custom
+
+	void splitFaceQUADS(myFace*, myPoint3D*);
+	void splitFaceQUADS(myFace *, myVertex*); // custom
 
 	void triangulate();
 	bool triangulate(myFace *);
