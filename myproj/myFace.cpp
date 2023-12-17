@@ -20,7 +20,7 @@ myFace::myFace(void)
 myFace::~myFace(void)
 {
 	//cout << "delete face : " << index << endl;
-	if (normal) delete normal;
+	if (normal != NULL || normal != nullptr) delete normal;
 }
 
 void myFace::computeNormal()

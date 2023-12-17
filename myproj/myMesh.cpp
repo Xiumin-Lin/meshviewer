@@ -25,9 +25,9 @@ myMesh::~myMesh(void)
 
 void myMesh::clear()
 {
-	for (unsigned int i = 0; i < vertices.size(); i++) if (vertices[i]) delete vertices[i];
-	for (unsigned int i = 0; i < halfedges.size(); i++) if (halfedges[i]) delete halfedges[i];
-	for (unsigned int i = 0; i < faces.size(); i++) if (faces[i]) delete faces[i];
+	for (unsigned int i = 0; i < vertices.size(); i++)	if (vertices[i] != NULL)	delete vertices[i];
+	for (unsigned int i = 0; i < halfedges.size(); i++) if (halfedges[i] != NULL)	delete halfedges[i];
+	for (unsigned int i = 0; i < faces.size(); i++)		if (faces[i] != NULL)		delete faces[i];
 
 	vector<myVertex *> empty_vertices;    vertices.swap(empty_vertices);
 	vector<myHalfedge *> empty_halfedges; halfedges.swap(empty_halfedges);
@@ -44,44 +44,45 @@ void myMesh::checkMesh()
 		if (allHasNext) {
 			if (he->next == NULL || he->next == nullptr)
 			{
-				std::cout << "Error! Not all halfedge have their next!\n";
+				std::cout << "Error! Not all halfedge have their next!" << std::endl;
 				allHasNext = false;
 			}
 			else if (he->next->prev != he) {
-				std::cout << "Error! halfedge->next->prev should be the halfedge itself\n";
+				std::cout << "Error! halfedge->next->prev should be the halfedge itself" << std::endl;
 				allHasNext = false;
 			}
 		}
 		if (allHasPrev) {
 			if (he->prev == NULL || he->prev == nullptr)
 			{
-				std::cout << "Error! Not all halfedge have their prev!\n";
+				std::cout << "Error! Not all halfedge have their prev!" << std::endl;
 				allHasPrev = false;
 			}
 			else if (he->prev->next != he) {
-				std::cout << "Error! halfedge->prev->next should be the halfedge itself!\n";
+				std::cout << "Error! halfedge->prev->next should be the halfedge itself!" << std::endl;
 				allHasPrev = false;
 			}
 		}
 		if (allHasTwin) {
 			if (he->twin == NULL || he->twin == nullptr)
 			{
-				std::cout << "Error! Not all halfedge have their twins!\n";
+				std::cout << "Error! Not all halfedge have their twins!" << std::endl;
 				allHasTwin = false;
 			}
 			else if (he->twin->twin != he) {
-				std::cout << "Error! Twin of halfedge is not the halfedge itself!\n";
+				std::cout << "Error! Twin of halfedge is not the halfedge itself!" << std::endl;
 				allHasTwin = false;
 			}
 			else if (he->next == NULL || he->next == nullptr || he->twin->source != he->next->source) {
-				std::cout << "Error! Twin of halfedge has not the same source as the next of halfedge!\n";
+				std::cout << "Error! Twin of halfedge has not the same source as the next of halfedge!" << std::endl;
 				allHasTwin = false;
 			}
 		}
 	}
-	if (allHasNext)	std::cout << "Each halfedge has a next!\n";
-	if (allHasPrev) std::cout << "Each halfedge has a prev!\n";
-	if (allHasTwin) std::cout << "Each halfedge has a twin!\n";
+	if (allHasNext)	std::cout << "Each halfedge has a next!" << std::endl;
+	if (allHasPrev) std::cout << "Each halfedge has a prev!" << std::endl;
+	if (allHasTwin) std::cout << "Each halfedge has a twin!" << std::endl;
+	std::cout << std::endl;
 }
 
 bool myMesh::readFile(std::string filename)
@@ -464,20 +465,26 @@ void myMesh::triangulate()
 			center_vertex->point = center_p;
 			vertices.push_back(center_vertex);
 
+			myFace* new_face = face;
 			myHalfedge* originHalfedge = face->adjacent_halfedge;
-
+			myHalfedge* stepHalfedge = face->adjacent_halfedge;
+			int cpt = 0;
 			do
 			{
 				// create face
-				myFace* new_face = new myFace();
-				new_face->adjacent_halfedge = originHalfedge;
-				originHalfedge->adjacent_face = new_face;
+				if (cpt > 0) {
+					new_face = new myFace();
+					faces.push_back(new_face);
+				}
+				cpt++;
+				new_face->adjacent_halfedge = stepHalfedge;
+				stepHalfedge->adjacent_face = new_face;
 
 				// create halfedge
-				myHalfedge* originHalfedgeNext = originHalfedge->next;
+				myHalfedge* nextHalfedge = stepHalfedge->next;
 
 				myHalfedge* nextHalf = new myHalfedge();
-				nextHalf->source = originHalfedgeNext->source;
+				nextHalf->source = nextHalfedge->source;
 				nextHalf->source->originof = nextHalf;
 				nextHalf->adjacent_face = new_face;
 
@@ -487,43 +494,30 @@ void myMesh::triangulate()
 				prevHalf->adjacent_face = new_face;
 
 				// associate halfedge
-				nextHalf->prev = originHalfedge;
+				nextHalf->prev = stepHalfedge;
 				nextHalf->next = prevHalf;
 
 				prevHalf->prev = nextHalf;
-				prevHalf->next = originHalfedge;
+				prevHalf->next = stepHalfedge;
 
-				originHalfedge->prev = prevHalf;
-				originHalfedge->next = nextHalf;
+				stepHalfedge->prev = prevHalf;
+				stepHalfedge->next = nextHalf;
 
 				// create twin
 				associateTwin(twin_map, nextHalf->source->id, prevHalf->source->id, nextHalf);
-				associateTwin(twin_map, prevHalf->source->id, originHalfedge->source->id, prevHalf);
+				associateTwin(twin_map, prevHalf->source->id, stepHalfedge->source->id, prevHalf);
 
-				// save created face and halfedge
-				faces.push_back(new_face);
-
+				// save created halfedge
 				halfedges.push_back(nextHalf);
 				halfedges.push_back(prevHalf);
 
 				// pass to next globale halfedge
-				originHalfedge = originHalfedgeNext;
-			} while (face->adjacent_halfedge != originHalfedge);
-
-			// delete old face
-			delete this->faces[idx];
-			this->faces[idx] = nullptr;
+				stepHalfedge = nextHalfedge;
+			} while (originHalfedge != stepHalfedge);
 		}
 		else
 		{
 			std::cout << "Error when tryng triangulate face id " << face->id << " : have only " << vertex_cpt << " halfedges !" << endl;
-		}
-	}
-
-	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
-	{
-		if (faces[i] == nullptr) {
-			faces.erase(faces.begin() + i);
 		}
 	}
 	checkMesh();
