@@ -185,6 +185,12 @@ void menu(int item)
 			for (size_t i = 0; i < 10; i++)
 			{
 				//cout << "*****************start collapse edge " << i << endl;
+				myHalfedge* e = m->getShortestEdge();
+				if (e == NULL)
+				{
+					cout << "no more edge to collapse" << endl;
+					break;
+				}
 				m->collapse(m->getShortestEdge());
 				//cout << "*****************computeNormals" << endl;
 				m->computeNormals();
