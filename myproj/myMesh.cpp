@@ -117,17 +117,14 @@ void myMesh::checkMesh()
 		myHalfedge* step_h = v->originof;
 		int cpt_v = 0;
 		do {
-			cout << "visite step > " << step_h->id << endl;
-			step_h->source->point->print("=== > ");
 			if (step_h->adjacent_face != NULL) {
-				cout << "v11111 isite face > " << step_h->adjacent_face->id << endl;
 				if (visited_faces.find(step_h->adjacent_face->id) != visited_faces.end()) {
 					std::cout << "Error! Vertex loop indefinitely for " << v->id << std::endl;
 					allVertexCanMoveAround = false;
 					break;
 				}
 				visited_faces[step_h->adjacent_face->id] = true;
-			} else cout << "visite face > NULL" << endl;
+			}
 			cpt_v++;
 			step_h = step_h->twin->next;
 		} while (step_h != v->originof);
@@ -625,7 +622,6 @@ void myMesh::collapse(myHalfedge* e) {
 			vertices.erase(vertices.begin() + i);
 		}
 	}
-
 	// delete faces
 	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
 	{
@@ -634,7 +630,6 @@ void myMesh::collapse(myHalfedge* e) {
 			faces.erase(faces.begin() + i);
 		}
 	}
-	cout << "faces.size() = " << faces.size() << endl;
 	// delete halfedge
 	myHalfedge* e_twin = e->twin;
 	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
@@ -654,7 +649,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		cout << "Boundary halfedge !" << endl;
 		e->next->prev = e->prev;
 		e->prev->next = e->next;
-		e->next->source->originof = e->next;
+		e->next->source->originof = e->next;	// don't move this line, it's the result of 3h of debug 
 		return nullptr;
 	}
 
