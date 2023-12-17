@@ -468,15 +468,15 @@ void myMesh::triangulate()
 			myFace* new_face = face;
 			myHalfedge* originHalfedge = face->adjacent_halfedge;
 			myHalfedge* stepHalfedge = face->adjacent_halfedge;
-			int cpt = 0;
+			int face_cpt = 0;
 			do
 			{
-				// create face
-				if (cpt > 0) {
+				// create face (use the initial face first before create new one)
+				if (face_cpt > 0) {
 					new_face = new myFace();
 					faces.push_back(new_face);
 				}
-				cpt++;
+				face_cpt++;
 				new_face->adjacent_halfedge = stepHalfedge;
 				stepHalfedge->adjacent_face = new_face;
 
