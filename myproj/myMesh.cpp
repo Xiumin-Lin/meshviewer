@@ -39,10 +39,8 @@ void myMesh::checkMesh()
 	bool allHasTwin = true;
 	bool allHasNext = true;
 	bool allHasPrev = true;
-	cout << "checkMesh" << endl;
 	for (myHalfedge* he : halfedges)
 	{
-		cout << "allHasNext: " << he->id << endl;
 		if (allHasNext) {
 			if (he->next == NULL || he->next == nullptr)
 			{
@@ -54,7 +52,6 @@ void myMesh::checkMesh()
 				allHasNext = false;
 			}
 		}
-		cout << "allHasPrev: " << he->id << endl;
 		if (allHasPrev) {
 			if (he->prev == NULL || he->prev == nullptr)
 			{
@@ -66,7 +63,6 @@ void myMesh::checkMesh()
 				allHasPrev = false;
 			}
 		}
-		cout << "allHasTwin: " << he->id << endl;
 		if (allHasTwin) {
 			if (he->twin == NULL || he->twin == nullptr)
 			{
@@ -177,17 +173,13 @@ bool myMesh::readFile(std::string filename)
 		}
 	}
 
-	std::cout << "nb vertices : " << vertices.size() << endl;
-	std::cout << "nb twin to create : " << twin_map.size() << endl;
 	// create twin for every halfedge still in the map, it's considerate as a boundary halfedge
 	for (auto& kv: twin_map)
 	{
 		pair<int, int> key = kv.first;
 		int vertex_a = key.first;
 		int vertex_b = key.second;
-		std::cout << "vertex a : " << vertex_a << " vertex b : " << vertex_b << endl;
 		myHalfedge* twin = kv.second;	// halfedge a->b
-		std::cout << "create boundary halfedge for : " << twin->id << endl;
 		myHalfedge* e = new myHalfedge();
 		/* neighbours setting */
 		e->source = this->vertices.at(vertex_b);
@@ -199,10 +191,8 @@ bool myMesh::readFile(std::string filename)
 		myHalfedge* steph = twin->next;
 		while (steph->twin != NULL && steph->twin->adjacent_face != NULL)
 		{
-			std::cout << "steph->twin : " << steph->twin->id << endl;
 			steph = steph->twin->next;
 		}
-		std::cout << "steph->twin : " << steph->twin << endl;
 		if (steph->twin != NULL)
 		{
 			e->prev = steph->twin;
@@ -212,7 +202,6 @@ bool myMesh::readFile(std::string filename)
 		steph = twin->prev;
 		while (steph->twin != NULL && steph->twin->adjacent_face != NULL)
 		{
-			std::cout << "steph->twin : " << steph->twin->id << endl;
 			steph = steph->twin->prev;
 		}
 		if (steph->twin != NULL)
@@ -221,10 +210,8 @@ bool myMesh::readFile(std::string filename)
 			e->next->prev = e;
 		}
 		
-		std::cout << "create boundary halfedge ===============: " << e->id << endl;
 		halfedges.push_back(e);
 	}
-	std::cout << "nb halfedges : " << halfedges.size() << endl;
 
 	checkMesh();
 	normalize();
