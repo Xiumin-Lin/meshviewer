@@ -10,6 +10,7 @@ static int vertex_id_cpt = 1;
 myVertex::myVertex(void)
 {
 	id = vertex_id_cpt++;
+	index = id;
 	//cout << "create vertex : " << id << endl;
 	point = NULL;
 	originof = NULL;
@@ -29,7 +30,7 @@ void myVertex::computeNormal()
 	myHalfedge* steph = originof;
 	//cout << "do steph : " << steph->id << endl;
 	do {
-		*normal += *(steph->adjacent_face->normal);
+		if(steph->adjacent_face != NULL) *normal += *(steph->adjacent_face->normal);
 		steph = steph->twin->next;
 	} while (originof != steph);
 	normal->normalize();

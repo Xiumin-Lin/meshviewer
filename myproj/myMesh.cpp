@@ -15,13 +15,9 @@ myMesh::myMesh(void)
 	/**** TODO ****/
 }
 
-
 myMesh::~myMesh(void)
 {
 	/**** TODO ****/
-	for (auto v : vertices)		if (v) delete v;
-	for (auto h : halfedges)	if (h) delete h;
-	for (auto f : faces)		if (f) delete f;
 	for (myVertex* v : vertices)	if (v) delete v;
 	for (myHalfedge* h : halfedges)	if (h) delete h;
 	for (myFace* f : faces)			if (f) delete f;
@@ -40,62 +36,57 @@ void myMesh::clear()
 
 void myMesh::checkMesh()
 {
-	vector<myHalfedge *>::iterator it;
-	for (it = halfedges.begin(); it != halfedges.end(); it++)
 	bool allHasTwin = true;
 	bool allHasNext = true;
 	bool allHasPrev = true;
+	cout << "checkMesh" << endl;
 	for (myHalfedge* he : halfedges)
 	{
-		if ((*it)->twin == NULL)
-			break;
-		if (allHasTwin) {
-			if (he->twin == NULL || he->twin == nullptr)
-			{
-				cout << "Error! Not all halfedge have their twins!\n";
-				allHasTwin = false; break;
-			}
-			else if (he->twin->twin != he) {
-				cout << "Error! Twin of halfedge is not the halfedge itself!\n";
-				allHasTwin = false; break;
-			}
-			else if (he->twin->source != he->next->source) {
-				cout << "Error! Twin of halfedge has not the same source as the next of halfedge!\n";
-				allHasTwin = false; break;
-			}
-		}
-
+		cout << "allHasNext: " << he->id << endl;
 		if (allHasNext) {
 			if (he->next == NULL || he->next == nullptr)
 			{
-				cout << "Error! Not all halfedge have their next!\n";
-				allHasNext = false; break;
+				std::cout << "Error! Not all halfedge have their next!\n";
+				allHasNext = false;
 			}
 			else if (he->next->prev != he) {
-				cout << "Error! halfedge->next->prev should be the halfedge itself\n";
-				allHasNext = false; break;
+				std::cout << "Error! halfedge->next->prev should be the halfedge itself\n";
+				allHasNext = false;
 			}
 		}
-
+		cout << "allHasPrev: " << he->id << endl;
 		if (allHasPrev) {
 			if (he->prev == NULL || he->prev == nullptr)
 			{
-				cout << "Error! Not all halfedge have their prev!\n";
-				allHasNext = false; break;
+				std::cout << "Error! Not all halfedge have their prev!\n";
+				allHasPrev = false;
 			}
 			else if (he->prev->next != he) {
-				cout << "Error! halfedge->prev->next should be the halfedge itself!\n";
-				allHasNext = false; break;
+				std::cout << "Error! halfedge->prev->next should be the halfedge itself!\n";
+				allHasPrev = false;
+			}
+		}
+		cout << "allHasTwin: " << he->id << endl;
+		if (allHasTwin) {
+			if (he->twin == NULL || he->twin == nullptr)
+			{
+				std::cout << "Error! Not all halfedge have their twins!\n";
+				allHasTwin = false;
+			}
+			else if (he->twin->twin != he) {
+				std::cout << "Error! Twin of halfedge is not the halfedge itself!\n";
+				allHasTwin = false;
+			}
+			else if (he->next == NULL || he->next == nullptr || he->twin->source != he->next->source) {
+				std::cout << "Error! Twin of halfedge has not the same source as the next of halfedge!\n";
+				allHasTwin = false;
 			}
 		}
 	}
-	if (it != halfedges.end()) cout << "Error! Not all edges have their twins!\n";
-	else cout << "Each edge has a twin!\n";
-	if (allHasTwin) cout << "Each halfedge has a twin!\n";
-	if (allHasNext)	cout << "Each halfedge has a next!\n";
-	if (allHasPrev) cout << "Each halfedge has a prev!\n";
+	if (allHasNext)	std::cout << "Each halfedge has a next!\n";
+	if (allHasPrev) std::cout << "Each halfedge has a prev!\n";
+	if (allHasTwin) std::cout << "Each halfedge has a twin!\n";
 }
-
 
 bool myMesh::readFile(std::string filename)
 {
@@ -105,7 +96,7 @@ bool myMesh::readFile(std::string filename)
 
 	ifstream fin(filename);
 	if (!fin.is_open()) {
-		cout << "Unable to open file!\n";
+		std::cout << "Unable to open file!\n";
 		return false;
 	}
 	name = filename;
@@ -122,7 +113,7 @@ bool myMesh::readFile(std::string filename)
 		{
 			float x, y, z;
 			myline >> x >> y >> z;
-			//cout << "v " << x << " " << y << " " << z << endl;
+			//std::cout << "v " << x << " " << y << " " << z << endl;
 
 			myVertex* vertex = new myVertex();
 			vertex->point = new myPoint3D(x, y, z);
@@ -134,40 +125,42 @@ bool myMesh::readFile(std::string filename)
 		else if (t == "f")
 		{
 			vector<int> list;
-			int verticesSize = vertices.size();
+			int vSize = vertices.size();
 
-			//cout << "f"; 
+			//std::cout << "f";
 			while (myline >> u)
 			{
 				int vertexIdx = atoi((u.substr(0, u.find("/"))).c_str());
-				//cout << " " << vertexIdx;
-				vertexIdx = vertexIdx >= 0 ? vertexIdx - 1 : vertexIdx % verticesSize;
+				vertexIdx = vertexIdx > 0 ? vertexIdx - 1 : (vertexIdx < 0 ? (vertexIdx % vSize) + vSize : 0);
+				//std::cout << " " << vertexIdx;
 				list.push_back(vertexIdx);
 			}
-			//cout << endl;
+			//std::cout << endl;
 
-			int listSize = list.size();
+			int nbVertex = list.size();
 			myFace* face = new myFace();
-			myHalfedge* originHalfedge;
-
 			myHalfedge* prevHalfedge = nullptr;
-			for (size_t i = 0; i < listSize; i++)
+			for (size_t i = 0; i < nbVertex; i++)
 			{
+				int vertex_a = list[i];
+				int vertex_b = list[(i + 1) % nbVertex];
 				myHalfedge* e = new myHalfedge();
-				e->source = this->vertices.at(list[i]);
+
+				/* neighbours setting */
+				e->source = this->vertices.at(vertex_a);
 				e->source->originof = e;
 				e->adjacent_face = face;
 				e->prev = prevHalfedge;
 
-				if (i == 0) 
-				{
-					originHalfedge = e;
-					prevHalfedge = e;
+				if (i == 0) face->adjacent_halfedge = e;	// first halfedge
+				else prevHalfedge->next = e;				// between first and last halfedge
+				if (i == nbVertex - 1) {					// last halfedge, don't move up this line
+					e->next = face->adjacent_halfedge;
+					face->adjacent_halfedge->prev = e;
 				}
-				else prevHalfedge->next = e;
+				prevHalfedge = e;							// don't move up this line
 
-				int vertex_a = list[i];
-				int vertex_b = list[(i + 1) % listSize];
+				/* twin setting */
 				it = twin_map.find(make_pair(vertex_b, vertex_a));
 				if (it == twin_map.end()) { 
 					twin_map[make_pair(vertex_a, vertex_b)] = e;
@@ -175,21 +168,63 @@ bool myMesh::readFile(std::string filename)
 				else { 
 					e->twin = it->second;
 					e->twin->twin = e;
-				}
-
-				if (i == listSize - 1) {
-					e->next = originHalfedge;
-					originHalfedge->prev = e;
+					twin_map.erase(it);	// erase the twin from the map so we can create a twin for every halfedge still in the map at the end
 				}
 
 				halfedges.push_back(e);
-				prevHalfedge = e;
 			}
-
-			face->adjacent_halfedge = originHalfedge;
 			faces.push_back(face);
 		}
 	}
+
+	std::cout << "nb vertices : " << vertices.size() << endl;
+	std::cout << "nb twin to create : " << twin_map.size() << endl;
+	// create twin for every halfedge still in the map, it's considerate as a boundary halfedge
+	for (auto& kv: twin_map)
+	{
+		pair<int, int> key = kv.first;
+		int vertex_a = key.first;
+		int vertex_b = key.second;
+		std::cout << "vertex a : " << vertex_a << " vertex b : " << vertex_b << endl;
+		myHalfedge* twin = kv.second;	// halfedge a->b
+		std::cout << "create boundary halfedge for : " << twin->id << endl;
+		myHalfedge* e = new myHalfedge();
+		/* neighbours setting */
+		e->source = this->vertices.at(vertex_b);
+		e->source->originof = e;
+		e->adjacent_face = NULL;	// no face for boundary halfedge
+		e->twin = twin;
+		twin->twin = e;
+		/* setup prev */
+		myHalfedge* steph = twin->next;
+		while (steph->twin != NULL && steph->twin->adjacent_face != NULL)
+		{
+			std::cout << "steph->twin : " << steph->twin->id << endl;
+			steph = steph->twin->next;
+		}
+		std::cout << "steph->twin : " << steph->twin << endl;
+		if (steph->twin != NULL)
+		{
+			e->prev = steph->twin;
+			e->prev->next = e;
+		}
+		/* setup prev */
+		steph = twin->prev;
+		while (steph->twin != NULL && steph->twin->adjacent_face != NULL)
+		{
+			std::cout << "steph->twin : " << steph->twin->id << endl;
+			steph = steph->twin->prev;
+		}
+		if (steph->twin != NULL)
+		{
+			e->next = steph->twin;
+			e->next->prev = e;
+		}
+		
+		std::cout << "create boundary halfedge ===============: " << e->id << endl;
+		halfedges.push_back(e);
+	}
+	std::cout << "nb halfedges : " << halfedges.size() << endl;
 
 	checkMesh();
 	normalize();
@@ -200,19 +235,19 @@ bool myMesh::readFile(std::string filename)
 void myMesh::computeNormals()
 {
 	/**** TODO ****/
-	//cout << "-----------------start faces computeNormals" << endl;
+	//std::cout << "-----------------start faces computeNormals" << endl;
 	for (size_t i = 0; i < faces.size(); i++)
 	{
-		//cout << i << " : " << faces[i]->id << endl;
+		//std::cout << i << " : " << faces[i]->id << endl;
 		faces[i]->computeNormal();
 	}
-	//cout << "-----------------start vertices computeNormals" << endl;
+	//std::cout << "-----------------start vertices computeNormals" << endl;
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		//cout << i << " : " << vertices[i]->id << endl;
+		//std::cout << i << " : " << vertices[i]->id << endl;
 		vertices[i]->computeNormal();
 	}
-	//cout << "-----------------end vertices computeNormals" << endl;
+	//std::cout << "-----------------end vertices computeNormals" << endl;
 }
 
 void myMesh::normalize()
@@ -295,19 +330,19 @@ myVertex* computeEdgeMidPoint(myHalfedge* e) {
 void myMesh::subdivisionCatmullClark()
 {
 	/**** TODO ****/
-	vector<myVertex*> newFacePoints;
-	vector<myVertex*> newEdgepoints;
-	vector<myFace*> newFaces;
+	//vector<myVertex*> newFacePoints;
+	//vector<myVertex*> newEdgepoints;
+	//vector<myFace*> newFaces;
 
-	// Step 1: Create new vertices as face center point
-	for (auto& face : faces) {
-		newFacePoints.push_back(computeFaceCenterPoint(face));
-	}
+	//// Step 1: Create new vertices as face center point
+	//for (auto& face : faces) {
+	//	newFacePoints.push_back(computeFaceCenterPoint(face));
+	//}
 
-	// Step 2: Create new vertices as edge middle point
-	for (auto& edge : halfedges) {
-		newEdgepoints.push_back(computeEdgeMidPoint(edge));
-	}
+	//// Step 2: Create new vertices as edge middle point
+	//for (auto& edge : halfedges) {
+	//	newEdgepoints.push_back(computeEdgeMidPoint(edge));
+	//}
 
 	// Step 3: Connection
 	// addNewVertexToEdge
@@ -333,6 +368,72 @@ void myMesh::subdivisionCatmullClark()
 		// R = sum(all newMiddleEdgeP of edge that touch the originP) / n
 		// S = originP
 
+	map<myFace*, myVertex*> facePointsMap;
+	map<myHalfedge*, myVertex*> halfedgesPointsMap;
+
+	vector<myVertex*> newVertices;
+	vector<myFace*> newFaces;
+
+	for (size_t idx = 0; idx < faces.size(); idx++) {
+		myPoint3D* centerFacePoint = new myPoint3D();
+		myHalfedge* currentEdge = faces[idx]->adjacent_halfedge;
+		int cpt = 0;
+		do
+		{
+			*centerFacePoint += *(currentEdge->source->point);
+			currentEdge = currentEdge->next;
+			cpt++;
+		} while (currentEdge != faces[idx]->adjacent_halfedge);
+
+		*centerFacePoint /= cpt;
+		myVertex* newVertex = new myVertex();
+		newVertex->point = centerFacePoint;
+		newVertices.push_back(newVertex);
+		facePointsMap[faces[idx]] = newVertex;
+	}
+
+	for (size_t idx = 0; idx < halfedges.size(); idx++)
+	{
+		myPoint3D* facePoint1 = halfedges[idx]->source->point;
+		myPoint3D* facePoint2 = halfedges[idx]->twin->source->point;
+		myPoint3D* facePointMap1 = facePointsMap[halfedges[idx]->adjacent_face]->point;
+		myPoint3D* facePointMap2 = facePointsMap[halfedges[idx]->twin->adjacent_face]->point;
+
+		myPoint3D* edgePoint = new myPoint3D();
+		*edgePoint += *facePoint1 + *facePoint2 + *facePointMap1 + *facePointMap2;
+		*edgePoint /= 4;
+
+		myVertex* newVertex = new myVertex();
+		newVertex->point = edgePoint;
+		newVertices.push_back(newVertex);
+		halfedgesPointsMap[halfedges[idx]] = newVertex;
+	}
+
+	for (size_t idx = 0; idx < vertices.size(); idx++)
+	{
+		myPoint3D* avgFacePoint = new myPoint3D();
+		myPoint3D* avgEdgePoint = new myPoint3D();
+
+		myHalfedge* currentEdge = vertices[idx]->originof;
+		myHalfedge* startEdge = currentEdge;
+		int cpt = 0;
+
+		do
+		{
+			*avgFacePoint += *facePointsMap[currentEdge->adjacent_face]->point;
+			*avgEdgePoint += *halfedgesPointsMap[currentEdge]->point;
+			currentEdge = currentEdge->twin->next;
+			cpt++;
+		} while (currentEdge != startEdge);
+
+		*avgFacePoint /= cpt;
+		*avgEdgePoint /= cpt;
+
+		myPoint3D* newPoint = new myPoint3D();
+		*newPoint += *avgFacePoint + *avgEdgePoint * 2 + *vertices[idx]->point * (cpt - 3);
+
+		vertices[idx]->point = newPoint;
+	}
 }
 
 void associateTwin(map<pair<int, int>, myHalfedge*>& twin_map, int idx_vertex_a, int idx_vertex_b, myHalfedge* e)
@@ -428,7 +529,7 @@ void myMesh::triangulate()
 		}
 		else
 		{
-			cout << "Error when tryng triangulate face id " << face->id << " : have only " << vertex_cpt << " halfedges !" << endl;
+			std::cout << "Error when tryng triangulate face id " << face->id << " : have only " << vertex_cpt << " halfedges !" << endl;
 		}
 	}
 
@@ -452,7 +553,7 @@ void myMesh::collapse(myHalfedge* e) {
 	// calculate the center point
 	myVertex* v1 = e->source;
 	myVertex* v2 = e->twin->source;
-	//cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
+	//std::cout << "collapse v1 = " << v1->id << " & v2 = " << v2->id << endl;
 	*v1->point += *v2->point;
 	*v1->point /= 2; // v1 is the new_center_vertex
 
@@ -478,7 +579,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(vertices.size()) - 1; i >= 0; i--)
 	{
 		if (vertices[i] == v2) {
-			//cout << "Delete vertice num " << vertices[i]->id << endl;
+			//std::cout << "Delete vertice num " << vertices[i]->id << endl;
 			vertices.erase(vertices.begin() + i);
 		}
 	}
@@ -487,7 +588,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(faces.size()) - 1; i >= 0; i--)
 	{
 		if ((faces[i] == toDelete_f1 && toDelete_half_1 != nullptr) || (faces[i] == toDelete_f2 && toDelete_half_2 != nullptr)) {
-			//cout << "Delete face num " << faces[i]->id << endl;
+			//std::cout << "Delete face num " << faces[i]->id << endl;
 			faces.erase(faces.begin() + i);
 		}
 	}
@@ -497,7 +598,7 @@ void myMesh::collapse(myHalfedge* e) {
 	for (int i = static_cast<int>(halfedges.size()) - 1; i >= 0; i--)
 	{
 		if (halfedges[i] == toDelete_half_1 || halfedges[i] == toDelete_half_1_twin || halfedges[i] == toDelete_half_2 || halfedges[i] == toDelete_half_2_twin || halfedges[i] == e || halfedges[i] == e_twin) {
-			//cout << "Delete halfedge num " << halfedges[i]->id << endl;
+			//std::cout << "Delete halfedge num " << halfedges[i]->id << endl;
 			halfedges.erase(halfedges.begin() + i);
 		}
 	}
@@ -512,7 +613,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		step = step->next;
 		cpt++;
 	} while (step != e);
-	//cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
+	//std::cout << "mesh of " << cpt << " vertices for face :" << e->adjacent_face->id << endl;
 
 	if (cpt == 3) {
 		myHalfedge* halfedge_a = e->prev;
@@ -545,7 +646,7 @@ myHalfedge* myMesh::collapseFace(myHalfedge* e) {
 		return nullptr;
 	}
 	else {
-		cout << "Can't collapse face, not enought vertices !" << endl;
+		std::cout << "Can't collapse face, not enought vertices !" << endl;
 		return nullptr;
 	}
 }
@@ -568,6 +669,6 @@ myHalfedge* myMesh::getShortestEdge() {
 		distances.push_back(make_pair(p1->dist(*p2), h));
 	}
 
-	sort(distances.begin(), distances.end());
+	sort(distances.begin(), distances.end()); // TODO to optimize
 	return distances[0].second;
 }

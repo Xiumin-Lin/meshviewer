@@ -13,6 +13,7 @@ myFace::myFace(void)
 	adjacent_halfedge = NULL;
 	normal = new myVector3D(1.0, 1.0, 1.0);
 	id = face_id_cpt++;
+	index = id;
 	//cout << "create face : " << id << endl;
 }
 

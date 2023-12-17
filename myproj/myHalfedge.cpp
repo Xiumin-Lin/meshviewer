@@ -12,6 +12,7 @@ myHalfedge::myHalfedge(void)
 	twin = NULL;
 
 	id = halfede_id_cpt++;
+	index = id;
 	//std::cout << "create halfedge : " << id << std::endl;
 }
 
