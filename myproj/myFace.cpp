@@ -13,13 +13,14 @@ myFace::myFace(void)
 	adjacent_halfedge = NULL;
 	normal = new myVector3D(1.0, 1.0, 1.0);
 	id = face_id_cpt++;
+	index = id;
 	//cout << "create face : " << id << endl;
 }
 
 myFace::~myFace(void)
 {
 	//cout << "delete face : " << index << endl;
-	if (normal) delete normal;
+	if (normal != NULL || normal != nullptr) delete normal;
 }
 
 void myFace::computeNormal()

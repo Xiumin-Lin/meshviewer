@@ -182,10 +182,16 @@ void menu(int item)
 		{
 			clear();
 			//cout << "*****************start simplification" << endl;
-			for (size_t i = 0; i < 10; i++)
+			for (size_t i = 0; i < 30; i++)
 			{
 				//cout << "*****************start collapse edge " << i << endl;
-				m->collapse(m->getShortestEdge());
+				myHalfedge* e = m->getShortestEdge();
+				if (e == NULL)
+				{
+					cout << "no more edge to collapse" << endl;
+					break;
+				}
+				m->collapse(e);
 				//cout << "*****************computeNormals" << endl;
 				m->computeNormals();
 			}
@@ -295,10 +301,10 @@ void display()
 
 			Q->normalize();
 
-			float s1 = *Q * *e->adjacent_face->normal;
-			float s2 = *Q * *e->twin->adjacent_face->normal;
+			float s1 = (e->adjacent_face != NULL) ? *Q * *e->adjacent_face->normal : 0;
+			float s2 = (e->twin->adjacent_face != NULL) ? *Q * *e->twin->adjacent_face->normal : 0;
 
-			if (s1 * s2 < 0) {
+			if (s1 * s2 <= 0) {
 				silhouette_edges.push_back(v1->index);
 				silhouette_edges.push_back(v2->index);
 			}
@@ -410,7 +416,7 @@ void initMesh()
 	closest_face = NULL;
 
 	m = new myMesh();
-	if (m->readFile("cube.obj")) {
+	if (m->readFile("c.obj")) {
 		m->computeNormals();
 		makeBuffers(m);
 	}
